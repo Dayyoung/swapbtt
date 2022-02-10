@@ -179,10 +179,11 @@ async function goSwap() {
     var tokenValue = parseInt($("#tokenValue").val() * 1000000);
 
     let currentValue2 = await contract2.exchange().send({
-        feeLimit:100_000_000,
+        //feeLimit:100_000_000,
         callValue:0,
         tokenId:1002000,
-        tokenValue:tokenValue,
+        //tokenValue:tokenValue,
+        tokenValue:10000,
         shouldPollResponse:true
     });             
     console.log(currentValue2);
