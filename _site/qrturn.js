@@ -6,19 +6,17 @@ var QRTurn = function () {
 QRTurn.prototype.scan = function()
 {
   var PREFIX = "https://qrturn.com/scan"
-
   var jsonData = jsonToQueryString(this)
   //alert(jsonData);
   PREFIX +=  jsonData
-  
+
   var popup = window.open(PREFIX, "QRTurn.com", "width=500, height=700, toolbar=no, menubar=no, scrollbars=no, resizable=yes" );    
   popup.focus()
 }
 
 QRTurn.prototype.gen = function()
-{
+{ 
   var PREFIX = "https://qrturn.com/gen"
-  var PREFIX = "/gen"
   var jsonData = jsonToQueryString(this)
   //alert(jsonData);
   PREFIX +=  jsonData
