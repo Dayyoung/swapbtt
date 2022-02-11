@@ -85,7 +85,7 @@
     <meta name="twitter:title" property="og:title" content="BitTorrent Chain Wallet-Manage">
     <meta name="twitter:description" property="og:description" content="Manage Cross-Chain Assets on BTTC">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>BitTorrent Chain Wallet</title>
+    <title>SwapBTT.com</title>
     <link href="./btt/antds.0edec6ca.chunk.css" rel="stylesheet">
 
     <link href="./btt/main.47d16bf9.css" rel="stylesheet">
@@ -102,69 +102,64 @@
 
 <script type="text/javascript">
 
-  $.get( "https://apilist.tronscan.org/api/account?address=TMRoHTe9hin4jE6X9ybn4vfufuUYmyVYh6", function( data ) {
-  
-  //alert( data.tokenBalances[0].amount);
+function updateInfo(currentaddress) {
 
+  $.get( "https://apilist.tronscan.org/api/account?address=" + currentaddress , function( data ) {
+  
   for(i in data.tokens){
-      console.log(data.tokens[i].tokenAbbr)
       if (data.tokens[i].tokenAbbr == "BTTOLD"){
-          //console.log(data.tokens[i].balance);
           var orginBalance = parseInt(data.tokens[i].balance)
           var balance = orginBalance / (10 ** 6);
 
           //alert(balance)
-          $("#BTTOLD").html(balance)
+          $("#BTTOLD").html(balance.toFixed(6))
         }
         if (data.tokens[i].tokenAbbr == "BTT"){
-          //console.log(data.tokens[i].balance);
+          var orginBalance = parseInt(data.tokens[i].balance)
+          var balance = orginBalance / (10 ** 18);
+
+          $("#BTT").html(balance.toFixed(6))
+        }
+  };
+
+});
+
+var swapContract = "TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3";
+                
+$.get( "https://apilist.tronscan.org/api/account?address=" + swapContract , function( data ) {
+  
+  for(i in data.tokens){
+
+        if (data.tokens[i].tokenAbbr == "BTT"){
 
           var orginBalance = parseInt(data.tokens[i].balance)
-          var balance = orginBalance / (10 ** 6);
+          var balance = orginBalance / (10 ** 18);
+          
+          $("#SWAPABLE").html(balance.toFixed(0))
 
-          $("#BTT").html(balance)
         }
   };
 
 });
 
 
+}
+
+var istronWeb = false;
 
 window.onload = async function () {
     setTimeout(async function () {
       
             tronWeb = window.tronWeb;
-            console.log("tronWeb : ", tronWeb);
-            console.log("tronweb is successfully fetched from window");
 
             try {
                 var currentaddress = await tronWeb.address.fromHex((await tronWeb.trx.getAccount()).address.toString());
 
                 istronWeb = true;
 
-                // var balance = await tronWeb.trx.getBalance(currentaddress);
-                // balance = balance / (10 ** 6);
-                // console.log("BALANCE : " + balance);
-
-                // const CONTRACT = "TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4";
-                
-                // const ACCOUNT = currentaddress;
-
-                // const {
-                //     abi
-                // } = await tronWeb.trx.getContract(CONTRACT);
-                // // console.log(JSON.stringify(abi));
-
-                // const contract = tronWeb.contract(abi.entrys, CONTRACT);
-
-                // const btbalance = await contract.methods.balanceOf(ACCOUNT).call();
-
-                // console.log("balance:", btbalance.toString());
-
-
+                updateInfo(currentaddress);
             } catch(err) {
                console.log(err)
-               alert("Tronlink is not connected.")
 
                istronWeb = false;
             }
@@ -173,19 +168,32 @@ window.onload = async function () {
 
 async function goSwap() {
 
-    //swap                
-    let contract2 = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
-    
-    var tokenValue = parseInt($("#tokenValue").val() * 1000000);
+    if(!istronWeb) {
+      alert("Tronlink is not connected.")
+      return
+    }
 
-    let currentValue2 = await contract2.exchange().send({
+    var tokenValue = parseInt($("#tokenValue").val());
+
+    if(isNaN(tokenValue) || tokenValue <= 0 ) {
+      alert("Enter the amount of BTT to be exchanged.")
+      return
+    }
+
+    //swap                
+    let exchangeContract = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
+    
+    var satoshiValue = parseInt($("#tokenValue").val() * 1000000);
+
+    let exchangeResult = await exchangeContract.exchange().send({
         feeLimit:100_000_000,
         callValue:0,
         tokenId:1002000,
-        tokenValue:tokenValue,
+        tokenValue:satoshiValue,
         shouldPollResponse:true
-    });             
-    console.log(currentValue2);
+    });       
+
+    alert("transaction is completed.")
 }
 
 
@@ -230,7 +238,7 @@ async function goSwap() {
                         <div class="flexB"><span class="receive-num">Amount to Receive</span><span class="balance">Balance: <span class="balance-val" id="BTT">--</span></span></div>
                         <div class="receive-val mt-10"><span class="ant-input-affix-wrapper ant-input-affix-wrapper-disabled"><input disabled="" type="text" class="ant-input ant-input-disabled" value="--"><span class="ant-input-suffix"><span class="uni" style="margin-right: 0px;">BTT</span></span></span></div>
                       </div>
-                      <div class="swap-tip3">Swappable amount: -- BTT</div><button onclick="goSwap()" class="swap-btn ani-button-black" style="margin-top: 23px;">Confirm Swap</button>
+                      <div class="swap-tip3">Swappable amount: <span id="SWAPABLE"></span> BTT</div><button onclick="goSwap()" class="swap-btn ani-button-black" style="margin-top: 23px;">Confirm Swap</button>
                       <div class="swap-tip">* BTTOLD will be burned once swapped. Swapping BTT for BTTOLD is not allowed.</div>
                     </div>
                     <div class="bttswap-bottom">
