@@ -108,14 +108,14 @@ function updateInfo(currentaddress) {
   
   for(i in data.tokens){
       if (data.tokens[i].tokenAbbr == "BTTOLD"){
-          var orginBalance = parseInt(data.tokens[i].balance)
+          var orginBalance = parseFloat(data.tokens[i].balance)
           var balance = orginBalance / (10 ** 6);
 
           //alert(balance)
           $("#BTTOLD").html(balance.toFixed(6))
         }
         if (data.tokens[i].tokenAbbr == "BTT"){
-          var orginBalance = parseInt(data.tokens[i].balance)
+          var orginBalance = parseFloat(data.tokens[i].balance)
           var balance = orginBalance / (10 ** 18);
 
           $("#BTT").html(balance.toFixed(6))
@@ -132,7 +132,7 @@ $.get( "https://apilist.tronscan.org/api/account?address=" + swapContract , func
 
         if (data.tokens[i].tokenAbbr == "BTT"){
 
-          var orginBalance = parseInt(data.tokens[i].balance)
+          var orginBalance = parseFloat(data.tokens[i].balance)
           var balance = orginBalance / (10 ** 18);
           
           $("#SWAPABLE").html(balance.toFixed(0))
@@ -161,19 +161,9 @@ window.onload = async function () {
 
 
                 $('#tokenValue').change(function(){
-
-                  var tokenValue = parseInt($("#tokenValue").val());
-
-                  
-                  if(isNaN(tokenValue) || tokenValue <= 0 ) {
-                    return
-                  }
-
-                  var bttTokenValue = tokenValue * 1000;
-                  $("#bttTokenValue").val(bttTokenValue)
-
-
+                  caculateBTT();
                 })
+
             } catch(err) {
                console.log(err)
 
@@ -182,6 +172,27 @@ window.onload = async function () {
     }, 1000);
 }//window onload
 
+async function goMax() {
+
+  var BTTOLD = parseFloat($("#BTTOLD").html());
+
+  $("#tokenValue").val(BTTOLD)
+
+  caculateBTT()
+}
+
+async function caculateBTT() {
+    var tokenValue = parseFloat($("#tokenValue").val());
+
+    
+    if(isNaN(tokenValue) || tokenValue <= 0 ) {
+      return
+    }
+
+    var bttTokenValue = tokenValue * 1000;
+    $("#bttTokenValue").val(bttTokenValue)
+}
+
 async function goSwap() {
 
     if(!istronWeb) {
@@ -189,7 +200,7 @@ async function goSwap() {
       return
     }
 
-    var tokenValue = parseInt($("#tokenValue").val());
+    var tokenValue = parseFloat($("#tokenValue").val());
 
     if(isNaN(tokenValue) || tokenValue <= 0 ) {
       alert("Enter the amount of BTT to be exchanged.")
@@ -199,7 +210,7 @@ async function goSwap() {
     //swap                
     let exchangeContract = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
     
-    var satoshiValue = parseInt($("#tokenValue").val() * 1000000);
+    var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
 
     let exchangeResult = await exchangeContract.exchange().send({
         feeLimit:100_000_000,
@@ -229,7 +240,13 @@ async function goSwap() {
                   <section class="btt-swap-menu">
                     <div class="btt-swap-menu-title"><span class="btt-title-a">Swap</span><br><span class="btt-title-b">BTT</span></div>
                     <div class="btt-swap-menu-wrap">
-                      <div class="btt-swap-menu-item"><a href="https://wallet.bt.io/swap?language=EN#!" class="ant-btn ani-button-black"><span>BTTOLD Swap</span></a></div>
+                      
+                      <!-- <div class="btt-swap-menu-item">
+
+                        <a href="https://wallet.bt.io/swap?language=EN#!" class="ant-btn ani-button-black"><span>BTTOLD Swap</span></a>
+
+
+                      </div> -->
 <!--                       <div class="btt-swap-menu-item"><a href="https://wallet.bt.io/swap?language=EN#!" class="ant-btn ani-button-white"><span>BTT Swap</span></a></div> -->
                     </div>
                   </section>
@@ -247,7 +264,7 @@ async function goSwap() {
                       <div class="btt-f-title">BTTOLD Swap</div>
                       <div class="shadow-box">
                         <div class="flexB"><span class="swap-num">Amount to Swap</span><span class="available">Available: <span class="available-val" id="BTTOLD">--</span></span></div>
-                        <div class="swap-val mt-10"><span class="ant-input-affix-wrapper"><input placeholder="Enter an amount" type="text" class="ant-input" value="" id="tokenValue"><span class="ant-input-suffix"><span class="uni">BTTOLD</span><span class="coin-max-r">MAX</span></span></span></div>
+                        <div class="swap-val mt-10"><span class="ant-input-affix-wrapper"><input placeholder="Enter an amount" type="text" class="ant-input" value="" id="tokenValue"><span class="ant-input-suffix"><span class="uni">BTTOLD</span><span  onclick="goMax()" class="coin-max-r">MAX</span></span></span></div>
                       </div>
                       <div class="arrow"><img src="./btt/arrow-new4.a81a778f.svg" alt=""></div>
                       <div class="shadow-box">
