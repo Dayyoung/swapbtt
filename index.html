@@ -158,6 +158,22 @@ window.onload = async function () {
                 istronWeb = true;
 
                 updateInfo(currentaddress);
+
+
+                $('#tokenValue').change(function(){
+
+                  var tokenValue = parseInt($("#tokenValue").val());
+
+                  
+                  if(isNaN(tokenValue) || tokenValue <= 0 ) {
+                    return
+                  }
+
+                  var bttTokenValue = tokenValue * 1000;
+                  $("#bttTokenValue").val(bttTokenValue)
+
+
+                })
             } catch(err) {
                console.log(err)
 
@@ -236,7 +252,7 @@ async function goSwap() {
                       <div class="arrow"><img src="./btt/arrow-new4.a81a778f.svg" alt=""></div>
                       <div class="shadow-box">
                         <div class="flexB"><span class="receive-num">Amount to Receive</span><span class="balance">Balance: <span class="balance-val" id="BTT">--</span></span></div>
-                        <div class="receive-val mt-10"><span class="ant-input-affix-wrapper ant-input-affix-wrapper-disabled"><input disabled="" type="text" class="ant-input ant-input-disabled" value="--"><span class="ant-input-suffix"><span class="uni" style="margin-right: 0px;">BTT</span></span></span></div>
+                        <div class="receive-val mt-10"><span class="ant-input-affix-wrapper ant-input-affix-wrapper-disabled"><input disabled="" type="text" class="ant-input ant-input-disabled" id="bttTokenValue" value="--"><span class="ant-input-suffix"><span class="uni" style="margin-right: 0px;">BTT</span></span></span></div>
                       </div>
                       <div class="swap-tip3">Swappable amount: <span id="SWAPABLE"></span> BTT</div><button onclick="goSwap()" class="swap-btn ani-button-black" style="margin-top: 23px;">Confirm Swap</button>
                       <div class="swap-tip">* BTTOLD will be burned once swapped. Swapping BTT for BTTOLD is not allowed.</div>
