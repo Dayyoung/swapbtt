@@ -201,6 +201,10 @@ async function goMax() {
 
   var BTTOLD = parseFloat($("#BTTOLD").html());
 
+    if(isNaN(BTTOLD) || BTTOLD <= 0 ) {
+      return
+    }
+    
   $("#tokenValue").val(BTTOLD)
 
   caculateBTT()
