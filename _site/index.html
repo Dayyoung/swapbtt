@@ -63,11 +63,11 @@
         padding: 10px 10px 10px !important;
       }
     </style>
-    <link rel="icon" href="https://wallet.bt.io/favicon.png">
+    <link rel="icon" href="https://swappbtt.com/favicon.png">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="theme-color" content="#000000">
     <meta name="description" content="BitTorrent ">
-    <link rel="apple-touch-icon" href="https://wallet.bt.io/favicon.png">
+    <link rel="apple-touch-icon" href="https://swappbtt.com/favicon.png">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <meta name="theme-color" content="#000000">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -75,7 +75,7 @@
     <meta http-equiv="Expires" content="0">
     <meta property="og:site_name" content="BTTC">
     <meta name="robots" content="noodp,noydir">
-    <meta property="og:url" content="https://wallet.bittorrentchain.io">
+    <meta property="og:url" content="https://swappbtt.com">
     <meta name="keywords" content="BitTorrent,Chain Wallet,BTTC">
     <meta name="description" property="og:description" id="description" content="Manage Cross-Chain Assets on BTTC">
     <meta property="og:image" content="https://coin.top/production/logo/1002000.png">
@@ -232,50 +232,20 @@ async function goSwap() {
       return
     }
 
-    var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
-    
-    try {
-        let instance = await tronWeb.contract().at('TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3');
-      
-        instance.Exchange().watch((err, eventResult) => {
-            if (err) {
-                return console.error('Error with "method" event:', err);
-            }
-            if (eventResult) { 
-                console.log('eventResult:',eventResult);
-                alert("The transaction was successful.")
-                location.reload();
-            }
-          });
-
-        let res = await instance.exchange().send({
-            feeLimit:100_000_000,
-            callValue:0,
-            shouldPollResponse:true,
-            tokenId:1002000,
-            tokenValue:satoshiValue
-        });
-        console.log(res);
-
-    } catch (error) {
-        console.log(error);
-    }
-
-
     //swap                
-    // let exchangeContract = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
+    let exchangeContract = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
     
-    // var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
+    var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
 
-    // let exchangeResult = await exchangeContract.exchange().send({
-    //     feeLimit:100_000_000,
-    //     callValue:0,
-    //     tokenId:1002000,
-    //     tokenValue:satoshiValue,
-    //     shouldPollResponse:true
-    // });       
+    let exchangeResult = await exchangeContract.exchange().send({
+        feeLimit:100_000_000,
+        callValue:0,
+        tokenId:1002000,
+        tokenValue:satoshiValue,
+        shouldPollResponse:true
+    });       
 
-    // alert("transaction is completed.")
+    alert("transaction is completed.")
 }
 
 
