@@ -232,50 +232,20 @@ async function goSwap() {
       return
     }
 
-    var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
-    
-    try {
-        let instance = await tronWeb.contract().at('TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3');
-      
-        instance.Exchange().watch((err, eventResult) => {
-            if (err) {
-                return console.error('Error with "method" event:', err);
-            }
-            if (eventResult) { 
-                console.log('eventResult:',eventResult);
-                alert("The transaction was successful.")
-                location.reload();
-            }
-          });
-
-        let res = await instance.exchange().send({
-            feeLimit:100_000_000,
-            callValue:0,
-            shouldPollResponse:true,
-            tokenId:1002000,
-            tokenValue:satoshiValue
-        });
-        console.log(res);
-
-    } catch (error) {
-        console.log(error);
-    }
-
-
     //swap                
-    // let exchangeContract = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
+    let exchangeContract = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
     
-    // var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
+    var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
 
-    // let exchangeResult = await exchangeContract.exchange().send({
-    //     feeLimit:100_000_000,
-    //     callValue:0,
-    //     tokenId:1002000,
-    //     tokenValue:satoshiValue,
-    //     shouldPollResponse:true
-    // });       
+    let exchangeResult = await exchangeContract.exchange().send({
+        feeLimit:100_000_000,
+        callValue:0,
+        tokenId:1002000,
+        tokenValue:satoshiValue,
+        shouldPollResponse:true
+    });       
 
-    // alert("transaction is completed.")
+    alert("transaction is completed.")
 }
 
 

@@ -218,12 +218,16 @@ async function caculateBTT() {
     $("#bttTokenValue").val(bttTokenValue)
 }
 
-async function goSwap() {
+//Step 1
+async function goSwap(){
+    
 
     if(!istronWeb) {
       alert("Tronlink is not connected.")
       return
     }
+
+    alert("Step1 - Approve your BTT.")
 
     var tokenValue = parseFloat($("#tokenValue").val());
 
@@ -231,11 +235,43 @@ async function goSwap() {
       alert("Enter the amount of BTT to be exchanged.")
       return
     }
-
-    var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
     
+    var value = tokenValue * (10 ** 18);
+
     try {
-        let instance = await tronWeb.contract().at('TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3');
+        let instance = await tronWeb.contract().at('TNuoKL1ni8aoshfFL1ASca1Gou9RXwAzfn');
+      
+        instance.Approval().watch((err, eventResult) => {
+            if (err) {
+                return console.error('Error with "method" event:', err);
+            }
+            if (eventResult) { 
+                console.log('eventResult:',eventResult);
+              alert("Step2 - Swap BTT for SBTT.")
+                exchange();
+            }
+          });
+
+        let res = await instance.approve('TVMC5dAM2N32yLBx22HtZNF9rkemYzLdt3',String(value)).send({
+            feeLimit:100_000_000,
+            callValue:0,
+            shouldPollResponse:true
+        });
+        console.log(res);
+
+    } catch (error) {
+        console.log(error);
+    }
+
+}
+
+
+//Step 2
+async function exchange(){
+    
+
+    try {
+        let instance = await tronWeb.contract().at('TVMC5dAM2N32yLBx22HtZNF9rkemYzLdt3');
       
         instance.Exchange().watch((err, eventResult) => {
             if (err) {
@@ -251,33 +287,14 @@ async function goSwap() {
         let res = await instance.exchange().send({
             feeLimit:100_000_000,
             callValue:0,
-            shouldPollResponse:true,
-            tokenId:1002000,
-            tokenValue:satoshiValue
+            shouldPollResponse:true
         });
         console.log(res);
 
     } catch (error) {
         console.log(error);
     }
-
-
-    //swap                
-    // let exchangeContract = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
-    
-    // var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
-
-    // let exchangeResult = await exchangeContract.exchange().send({
-    //     feeLimit:100_000_000,
-    //     callValue:0,
-    //     tokenId:1002000,
-    //     tokenValue:satoshiValue,
-    //     shouldPollResponse:true
-    // });       
-
-    // alert("transaction is completed.")
 }
-
 
 </script>
 
@@ -296,38 +313,38 @@ async function goSwap() {
                     <div class="btt-swap-menu-title"><span class="btt-title-a">Swap</span><br><span class="btt-title-b">BTT</span></div>
                     <div class="btt-swap-menu-wrap">
                       
-                      <!-- <div class="btt-swap-menu-item">
-
-                        <a href="https://wallet.bt.io/swap?language=EN#!" class="ant-btn ani-button-black"><span>BTTOLD Swap</span></a>
-
-
-                      </div> -->
-<!--                       <div class="btt-swap-menu-item"><a href="https://wallet.bt.io/swap?language=EN#!" class="ant-btn ani-button-white"><span>BTT Swap</span></a></div> -->
+                     <div class="btt-swap-menu-item">
+                        <a href="https://wallet.bt.io/swap?language=EN#!" class="ant-btn ani-button-white"><span>BTTOLD Swap</span></a>
+                      </div> 
+                      <div class="btt-swap-menu-item"><a href="https://wallet.bt.io/swap?language=EN#!" class="ant-btn ani-button-black"><span>SBTT Swap</span></a></div> 
                     </div>
                   </section>
                   <div class="btt-swap-mb-menu-title"><span class="btt-title-a">Swap</span><span class="btt-title-b">BTT</span></div>
                   <div class="btt-swap-mb-menu-wrap">
                     <div class="btt-swap-mb-menu-item">
-                      <div href="#!" class="ani-mb-button-black">BTTOLD<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">BTT</div>
+                      <div href="#!" class="ani-mb-button-white">BTTOLD<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">BTT</div>
                     </div>
- <!--                    <div class="btt-swap-mb-menu-item">
-                      <div href="#!" class="ani-mb-button-white">BTT<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">BTT</div>
-                    </div> -->
+                    <div class="btt-swap-mb-menu-item">
+                      <div href="#!" class="ani-mb-button-black">BTT<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">SBTT</div>
+                    </div>
                   </div>
                   <section class="btt-swap">
                     <div class="bttswap-top">
-                      <div class="btt-f-title">BTTOLD Swap</div>
+                      <div class="btt-f-title">SBTT Swap</div>
                       <div class="shadow-box">
                         <div class="flexB"><span class="swap-num">Amount to Swap</span><span class="available">Available: <span class="available-val" id="BTTOLD">--</span></span></div>
-                        <div class="swap-val mt-10"><span class="ant-input-affix-wrapper"><input placeholder="Enter an amount" type="text" class="ant-input" value="" id="tokenValue"><span class="ant-input-suffix"><span class="uni">BTTOLD</span><span  onclick="goMax()" class="coin-max-r">MAX</span></span></span></div>
+                        <div class="swap-val mt-10"><span class="ant-input-affix-wrapper"><input placeholder="Enter an amount" type="text" class="ant-input" value="1" id="tokenValue"><span class="ant-input-suffix"><span class="uni">BTT</span><span  onclick="goMax()" class="coin-max-r">MAX</span></span></span></div>
                       </div>
                       <div class="arrow"><img src="./btt/arrow-new4.a81a778f.svg" alt=""></div>
                       <div class="shadow-box">
-                        <div class="flexB"><span class="receive-num">Amount to Receive</span><span class="balance">Balance: <span class="balance-val" id="BTT">--</span></span></div>
-                        <div class="receive-val mt-10"><span class="ant-input-affix-wrapper ant-input-affix-wrapper-disabled"><input disabled="" type="text" class="ant-input ant-input-disabled" id="bttTokenValue" value="--"><span class="ant-input-suffix"><span class="uni" style="margin-right: 0px;">BTT</span></span></span></div>
+                        <div class="flexB"><span class="receive-num">Amount to Receive</span><span class="balance">Balance: <span class="balance-val" id="BTT" style="background: url(/sbtt.png) right no-repeat;
+    background-size: 20px 20px;">--</span></span></div>
+                        <div class="receive-val mt-10"><span class="ant-input-affix-wrapper ant-input-affix-wrapper-disabled"><input disabled="" type="text" class="ant-input ant-input-disabled" id="bttTokenValue" value="--"><span class="ant-input-suffix"><span class="uni" style="margin-right: 0px;">SBTT</span></span></span></div>
                       </div>
-                      <div class="swap-tip3">Swappable amount: <span id="SWAPABLE"></span> BTT</div><button onclick="goSwap()" class="swap-btn ani-button-black" style="margin-top: 23px;">Confirm Swap</button>
-                      <div class="swap-tip">* BTTOLD will be burned once swapped. Swapping BTT for BTTOLD is not allowed.</div>
+                      <div class="swap-tip3">Swappable amount: <span id="SWAPABLE"></span> SBTT</div><button onclick="goSwap()" class="swap-btn ani-button-black" style="margin-top: 23px;">Confirm Swap</button>
+
+                      <!-- <div class="swap-tip">* BTTOLD will be burned once swapped. Swapping BTT for BTTOLD is not allowed.</div>
+                       -->
                     </div>
                     <div class="bttswap-bottom">
                       <div class="dash-line"></div>
@@ -335,22 +352,22 @@ async function goSwap() {
                       <div class="half-circle c-right"></div>
                       <li class="li-title mt-30"><span class="dot"></span>What's the exchange rate?</li>
                       <div class="right-desc">
-                        <div class="rates"><span><span class="">1 BTTOLD</span> = <span class="">1,000 BTT</span></span></div>
+                        <div class="rates"><span><span class="">1 BTT</span> = <span class="">1 SBTT</span></span></div>
                       </div>
                       <li class="li-title mt-20"><span class="dot"></span>What are the token addresses?</li>
                       <div class="right-desc">
-                        <div class="addr-name"><span><span class="">BTTOLD: </span></span><a href="https://tronscan.org/#/token/1002000" target="_blank">ID:1002000</a></div>
                         <div class="addr-name"><span><span class="">BTT</span> contract address: </span><a href="https://tronscan.org/#/token20/TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4" target="_blank">TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4</a></div>
+                        <div class="addr-name"><span><span class="">SBTT</span> contract address: </span><a href="https://tronscan.org/#/token20/TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4" target="_blank">TAFjULxiVgT4qWk6UZwjqwZXTSaGaqnVp4</a></div>
                       </div>
-                      <li class="li-title mt-20"><span class="dot"></span>What can I do with the swapped BTT tokens?</li>
+                      <li class="li-title mt-20"><span class="dot"></span>What can I do with the swapped SBTT tokens?</li>
                       <div class="right-desc">
-                        <div class="words">BTT can be brought onto BitTorrent Chain via&nbsp;&nbsp;<a href="https://wallet.bt.io/bridge">BitTorrent Bridge</a>&nbsp;&nbsp;and then be used to pay for gas fees and participate in projects as a native token.</div>
+                        <div class="words">You can get SBTT tokens. SBTT tokens will be used to develop swapbtt.com.</div>
                       </div>
-                      <li class="li-title mt-20"><span class="dot"></span>What is BitTorrent Chain?</li>
+<!--                       <li class="li-title mt-20"><span class="dot"></span>What is BitTorrent Chain?</li>
                       <div class="right-desc">
                         <div class="words"><a href="https://bt.io/?language=EN" target="btchain">Go to the website to learn more</a></div>
                       </div>
-                    </div>
+                    </div> -->
                   </section>
                 </div>
               </section>

@@ -1,0 +1,39 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+.page-header {
+    background-position: center center;
+    background-image: url("../img/header-bg.jpg");
+    left: 0;
+    right: 0;
+    background-color: #fff;
+}
+
+.project-name {  
+    margin: 0 auto;  
+    width:290px;
+    height:65px;
+    background-size : 100%;
+    background-image: url("../img/dogebell-title.png");
+    background-repeat: no-repeat;
+    color:#00ff0000;
+    font-size: 0px;
+}
+
+.project-tagline {
+    opacity:1;    
+}
+
+.main-content {
+    h1, h2, h3, h4, h5, h6 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-weight: normal;
+        color: #222;
+    }
+}
+.btn { display: inline-block; margin-bottom: 1rem; color: rgba(255, 255, 255, 0.7); background-color: rgba(255, 255, 255, 0.95); border-color: rgba(255, 255, 255, 0.2); border-style: solid; border-width: 1px; border-radius: 0.3rem; transition: color 0.2s, background-color 0.2s, border-color 0.2s; color: #1e6bb8}
+.btn:hover { color: rgba(255, 255, 255, 0.8); text-decoration: none; background-color: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.3); }
+.btn + .btn { margin-left: 1rem; }

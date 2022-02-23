@@ -1,0 +1,2695 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: "en-US" }}">
+<head>
+
+  <title>DogeBell</title>
+  <meta charset="UTF-8">
+  <meta name="Description" CONTENT="DogeBell - Dogecoin Metabus World.">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1e130c">
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'><!-- 
+  <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}"> -->
+  <link rel="apple-touch-icon-precomposed" href="152.png">
+  <link rel="apple-touch-startup-image" href="152.png">
+  <!-- Global site tag (gtag.js) - Google Analytics -->  
+
+  <!-- Chrome, Firefox OS, Opera -->
+  <meta name="theme-color" content="#4285f4">
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-CPMKD94RX9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-CPMKD94RX9');
+  </script>
+
+  
+  <script type="text/javascript" src="/assets/js/mnemonic.js"></script>
+  <script type="text/javascript" src="/assets/js/clipboard.min.js"></script>
+
+<!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+<script type="text/javascript" src="https://qrturn.com/qrturn.js"></script>
+
+<script>
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  var firebaseConfig = {
+    apiKey: "AIzaSyC66wDn6qRnk3woFJsrhJnM3XJXhyoJ-G4",
+    authDomain: "dogebell-72965.firebaseapp.com",
+    databaseURL: "https://dogebell-72965-default-rtdb.firebaseio.com",
+    projectId: "dogebell-72965",
+    storageBucket: "dogebell-72965.appspot.com",
+    messagingSenderId: "873794835835",
+    appId: "1:873794835835:web:bc1822fad59414eb15d9de",
+    measurementId: "G-XVZHHH4CE6"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  firebase.analytics();
+
+
+function backupWallet() {
+
+  hideDialog('mnemonicBackupDialog')
+
+  showModal()
+
+  var db = firebase.firestore();
+  // Add a new document in collection "cities"
+
+  if(!TOTALAMOUNT){
+    TOTALAMOUNT = 0
+  }
+  if(!TOTALMONEY){
+    TOTALMONEY = 0
+  }
+
+  db.collection("wallet").doc(WALLET).set({
+      bell: TOTALAMOUNT,
+      money: TOTALMONEY
+  }, { merge: true })
+  .then(() => {
+      hideModal()
+      //console.log("Document successfully written!");
+  })
+  .catch((error) => {
+      hideModal()
+      //console.error("Error writing document: ", error);
+  });
+
+}
+
+function importWallet(){
+  showMnemonicDialog();
+}
+
+function createWalletWithMnemonic(){
+
+  var address = $("#walletInput").val()
+  var word1 = $("#word1").val().trim()
+  var word2 = $("#word2").val().trim()
+  var word3 = $("#word3").val().trim()
+
+  if(address == "" || word1 == "" || word2 == "" || word3 == ""){
+    showToast("Please fill in all fields")
+    return
+  }
+
+  showModal()
+
+  //alert(address)
+
+  var db = firebase.firestore();
+  db.collection('wallet').doc(address).get()
+
+  .then((doc) => {
+      hideModal()
+      if (doc.exists) {
+          ////console.log("Document data:", doc.data());
+          var mnemonic = doc.data().Mnemonic
+
+          if(word1 == mnemonic[0] && word2 == mnemonic[1] && word3 == mnemonic[2]) {
+            WALLET = address
+            MNEMONIC = word1+","+word2+","+word3
+
+            movePageWithParam()
+
+            document.getElementById('mnemonicDialog').hide()
+
+            //recovery
+            var bell = doc.data().bell
+            var money = doc.data().money
+
+            if(!bell) {
+              bell = 0
+            }
+            if(!money) {
+              money = 0
+            }
+
+            //if(bell && money){
+              var transaction = {}
+              transaction.wallet = WALLET
+              transaction.amount = bell
+              transaction.money = money
+              setCookie("transaction",JSON.stringify(transaction))
+
+              console.log(JSON.stringify(transaction))
+              //console.log(money)
+            //}
+
+            location.reload();
+
+          }else{
+            document.getElementById('mnemonicDialog').hide()
+            showToast("Mnemonic is wrong.")
+          }
+      } else {
+          // doc.data() will be undefined in this case
+          //console.log("No such document!");
+          document.getElementById('mnemonicDialog').hide()
+          showToast("Wallet address is wrong.")
+          return;
+      }
+  }).catch((error) => {
+      hideModal()
+      document.getElementById('mnemonicDialog').hide()
+      //console.log("Error getting document:", error);
+      showToast("Something is wrong.")
+      return;
+  });
+}
+
+function insertWallet(item) {
+  
+  showModal()
+
+  var db = firebase.firestore();
+  db.collection("wallet").add(item)
+  .then((docRef) => {
+      hideModal()
+      ////console.log("Document written with ID: ", docRef.id);
+      WALLET = docRef.id
+      movePageWithParam()
+      hideDialog("my-dialog")
+      //drawWallet()
+      location.reload();
+
+  })
+  .catch((error) => {
+      hideModal()
+      ////console.error("Error adding document: ", error);
+  });
+}
+
+var LOGIN;
+
+function getWallet(){
+  WALLET = getParameterByName("WALLET")
+  MNEMONIC = getParameterByName("MNEMONIC")
+
+  if(!MNEMONIC){
+    return
+  }
+
+  var words = MNEMONIC.split(",")
+  var word1 = words[0]
+  var word2 = words[1]
+  var word3 = words[2]
+  //alert(word3)
+
+  if(WALLET == "" || word1 == "" || word2 == "" || word3 == ""){
+    showToast("Please fill in all fields")
+    return
+  }
+
+  var db = firebase.firestore();
+  db.collection('wallet').doc(WALLET).get()
+  .then((doc) => {
+      if (doc.exists) {
+      ////console.log("Document data:", doc.data());
+        
+        var mnemonic = doc.data().Mnemonic
+        if(!mnemonic){
+          return
+        }
+
+        if(word1 == mnemonic[0] && word2 == mnemonic[1] && word3 == mnemonic[2]) {
+        LOGIN = true  
+        $("#sendButton").show()
+        $("#importButton").show()
+        $("#backupButton").show()
+        } 
+
+         //recovery
+        var bell = doc.data().bell
+        var money = doc.data().money
+
+        // if(bell && money){
+        //   var transaction = {}
+        //   transaction.wallet = WALLET
+        //   transaction.amount = bell
+        //   TOTALAMOUNT = bell
+        //   transaction.money = money
+        //   setCookie("transaction",JSON.stringify(transaction))
+        // }
+      }
+    });
+}
+
+
+function createTransaction(item) {
+
+  //showModal()
+
+  var db = firebase.firestore();
+
+  db.collection("block").add(item)
+  .then((docRef) => {
+      //hideModal()
+      ////console.log("Document written with ID: ", docRef.id);
+  })
+  .catch((error) => {
+      ////console.error("Error adding document: ", error);
+  });
+
+}
+
+function showToast(message){
+
+
+  var myToast = document
+  .querySelector('ons-toast')
+
+  var isToast = $(myToast).is(':visible');
+
+  if(isToast){
+    ////console.log("DIALOG.")
+    return
+  }
+
+  $(myToast).find("#myToastString").html(message)
+
+  myToast.show();
+
+  setTimeout(function() {
+    myToast.hide();
+  }, 1000);
+
+ // var myToast = $('#myToast');
+ //  myToast.show();
+
+}
+
+function showModal() {
+  var modal = document.querySelector('ons-modal');
+  modal.show();
+  setTimeout(function() {
+    modal.hide();
+  }, 10000);
+}
+
+function hideModal() {
+  var modal = document.querySelector('ons-modal');
+  modal.hide();
+}
+
+
+function playGame(money,winRate) {
+    //showToast("Win the Game!")
+    // TOTALMONEY += money 
+    // saveState()
+    // drawMetabus()
+
+  if(TOTALMONEY < money){
+    showToast("Not enough Money.")
+    return
+  }
+
+  //var modal = document.querySelector('playModal');
+  var modal = document.getElementById('playModal');
+  modal.show();
+  setTimeout(function() {
+    
+    modal.hide();
+
+    var nowRate = Math.floor(Math.random() * 100); //0~99
+    //console.log(nowRate)
+    //nowRate = 0
+
+    if(winRate >= nowRate){
+      showToast("Win the Game!")
+      var rewardRate = 100 - winRate
+      var rewardAmount = rewardRate / 10 // X5 , X8 , X9
+      TOTALMONEY += money * rewardAmount
+      saveState()
+      drawMetabus()
+    }
+    else{
+      showToast("Lose the Game!")
+      TOTALMONEY -= money
+      saveState()
+      drawMetabus()
+    }
+
+  }, 200);
+}
+
+</script>
+  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
+  <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
+  <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  
+  <script type="text/javascript">
+
+    var TOTALDOGE = 1
+    var CURRENCY = "USD";
+    var UNIT = "$";
+    var DOGEPRICE = 0
+    var DOGEPRICEFORUSD = 0
+    var CURRENTLIST = ["USD","CAD","AUD","EUR","GBP","KRW","CNY","JPY","HKD"]
+    var CURRENCYUNIT = ["$","$","$","€","£","₩","¥","¥","$"]
+    var MARGINLIST = [-20,-18,-16,-14,-12,-10,-8,-6,-4,-2,0,2,4,6,8,10,12,14,16,18,20]
+    var MARGIN = 0;
+    var MENU = "Home"
+    var WALLET;
+    var MNEMONIC;
+
+    //https://api.coingecko.com/api/v3/simple/supported_vs_currencies
+
+    setInterval(function() {
+      updateDogePrice();
+    }, 30000);
+
+    $(document).ready(function(){
+
+      $(CURRENTLIST).each(function(i,item){
+        $("#selectList").append(new Option(CURRENTLIST[i], CURRENTLIST[i]));
+      });
+
+      $(MARGINLIST).each(function(i,item){
+        $("#fiatSelect").append(new Option(MARGINLIST[i]+"%", MARGINLIST[i]));
+      });
+
+      $("#fiatSelect").val(0);
+
+      if(getParameterByName("TOTALDOGE")){
+        TOTALDOGE = getParameterByName("TOTALDOGE")
+      }
+
+      if(getParameterByName("MARGIN")){
+        MARGIN = getParameterByName("MARGIN")
+        $("#fiatSelect").val(MARGIN)
+      }
+      
+      if(getParameterByName("CURRENCY")){
+        CURRENCY = getParameterByName("CURRENCY")
+        $("#selectList").val(CURRENCY)
+      }
+
+      if(getParameterByName("MENU")){
+        MENU = getParameterByName("MENU")
+      }
+
+      if(getParameterByName("MNEMONIC")){
+        MNEMONIC = getParameterByName("MNEMONIC")
+      }
+
+      if(getParameterByName("WALLET")){
+        WALLET = getParameterByName("WALLET")
+      }
+
+      UNIT = CURRENCYUNIT[$("#selectList").prop('selectedIndex')]
+      
+      getDogePrice();
+      updateDogePrice();
+      radomUpdateDogePrice();
+
+      $("#selectList").change( function() {
+        changeDoge();
+      });
+
+       $("#fiatSelect").change( function() {
+        MARGIN = $("#fiatSelect").val()
+        //location.href = window.location.href.split('?')[0] + "?TOTALDOGE="+TOTALDOGE +"&CURRENCY=" + CURRENCY +"&MARGIN=" + MARGIN
+        movePageWithParam()
+      });
+
+    });
+
+    function changeDoge(){
+
+      var promptForDoge = prompt("How much Dogecoin?", TOTALDOGE);
+
+      if ( promptForDoge == null ||  promptForDoge == "") {
+        //TOTALDOGE = parseInt(promptForDoge);
+        CURRENCY = $("#selectList").val()
+        //location.href = window.location.href.split('?')[0] + "?TOTALDOGE="+TOTALDOGE +"&CURRENCY=" + CURRENCY +"&MARGIN=" + MARGIN
+        movePageWithParam()
+      } else {
+        TOTALDOGE = parseInt(promptForDoge);
+        CURRENCY = $("#selectList").val()
+        //location.href = window.location.href.split('?')[0] + "?TOTALDOGE="+TOTALDOGE +"&CURRENCY=" + CURRENCY +"&MARGIN=" + MARGIN
+        movePageWithParam()
+      }
+    }
+
+    function movePageWithParam() {
+
+      var baseUrl = window.location.href.split('?')[0]
+      var url = new URL(baseUrl);
+
+      if(TOTALDOGE){
+        url.searchParams.set("TOTALDOGE", TOTALDOGE)
+      }
+      if(CURRENCY){
+        url.searchParams.set("CURRENCY", CURRENCY)
+      }
+      if(MARGIN){
+        url.searchParams.set("MARGIN", MARGIN)
+      }
+      if(MENU){
+        url.searchParams.set("MENU", MENU)
+      }
+      if(WALLET){
+        url.searchParams.set("WALLET", WALLET)
+      }
+      if(MNEMONIC){
+        url.searchParams.set("MNEMONIC", MNEMONIC)
+      }
+      //alert(url)
+      //location.href = url
+      history.replaceState({ data: 'replace' }, '', url);
+
+    }
+    
+
+    function movePageWithParamOLD() {
+
+      var baseUrl = window.location.href.split('?')[0]
+
+      if(TOTALDOGE){
+        baseUrl = updateQueryStringParameter(baseUrl,"TOTALDOGE",TOTALDOGE)
+      }
+      if(CURRENCY){
+        baseUrl = updateQueryStringParameter(baseUrl,"CURRENCY",CURRENCY)
+      }
+      if(MARGIN){
+        baseUrl = updateQueryStringParameter(baseUrl,"MARGIN",MARGIN)
+      }
+      if(MENU){
+        baseUrl = updateQueryStringParameter(baseUrl,"MENU",MENU)
+      }
+      if(WALLET){
+        baseUrl = updateQueryStringParameter(baseUrl,"WALLET",WALLET)
+      }
+      if(MNEMONIC){
+        baseUrl = updateQueryStringParameter(baseUrl,"MNEMONIC",MNEMONIC)
+      }
+
+      //alert(baseUrl)
+      location.href = baseUrl
+    }
+
+    function updateQueryStringParameter(uri, key, value) {
+      var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+      var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+      if (uri.match(re)) {
+        return uri.replace(re, '$1' + key + "=" + value + '$2');
+      }
+      else {
+        return uri + separator + key + "=" + value;
+      }
+    }
+    
+    function changeFiat(){
+      $("#fiatSelect").focus();
+    }
+
+    function getDogePrice(){
+
+      $.get( "https://api.coingecko.com/api/v3/simple/price?ids=dogecoin&vs_currencies=USD", function( data ) {
+      
+        var firstItem = data[Object.keys(data)[0]];
+        firstItem = firstItem[Object.keys(firstItem)[0]]
+        //alert(firstItem)
+        DOGEPRICEFORUSD = firstItem
+      });
+
+      if (MARGIN != 0) {
+        DOGEPRICEFORUSD = DOGEPRICEFORUSD + (DOGEPRICEFORUSD * (MARGIN / 100))
+      }
+
+    }
+
+    function updateDogePrice(){
+
+      $.get( "https://api.coingecko.com/api/v3/simple/price?ids=dogecoin&vs_currencies="+CURRENCY, function( data ) {
+
+        var firstItem = data[Object.keys(data)[0]];
+        firstItem = firstItem[Object.keys(firstItem)[0]]
+        //(firstItem)
+        DOGEPRICE = firstItem
+
+        if (MARGIN != 0) {
+          DOGEPRICE = DOGEPRICE + (DOGEPRICE * (MARGIN / 100))
+        }
+
+
+        $( "#dogeCount" ).html(TOTALDOGE);
+        $( "#unit" ).html(UNIT);
+
+        if(CURRENCY == "KRW" || CURRENCY == "JPY"){
+          $( "#dogePrice" ).html((TOTALDOGE * DOGEPRICE).toFixed(0));
+        }
+        else if(CURRENCY == "CNY" || CURRENCY == "HKD"){
+          $( "#dogePrice" ).html((TOTALDOGE * DOGEPRICE).toFixed(2));
+        }else{
+          $( "#dogePrice" ).html((TOTALDOGE * DOGEPRICE).toFixed(4));
+        }
+      });
+
+    }
+
+    function radomUpdateDogePrice() {
+
+      setInterval(function() {
+
+
+        if (DOGEPRICEFORUSD == 0){
+          return
+        }
+
+      ////console.log(MOONCOST);
+
+      if(CURRENCY == "KRW"){
+        var randomValue = Math.random() * 1
+          ////console.log(randomValue)
+
+          dogeRandomPrice = DOGEPRICE + randomValue
+
+          if(MOONCOST > 0){
+            dogeRandomPrice = (DOGEPRICE * MOONCOST) / DOGEPRICEFORUSD
+          }
+
+          $( "#dogeCount" ).html(TOTALDOGE);
+          $( "#unit" ).html(UNIT);
+
+          $( "#dogePrice" ).html((TOTALDOGE * dogeRandomPrice).toFixed(0));
+
+        }
+        else if(CURRENCY == "JPY"){
+          var randomValue = Math.random() * 1
+          ////console.log(randomValue)
+
+          dogeRandomPrice = DOGEPRICE + randomValue
+
+          if(MOONCOST > 0){
+            dogeRandomPrice = (DOGEPRICE * MOONCOST) / DOGEPRICEFORUSD
+          }
+          $( "#dogeCount" ).html(TOTALDOGE);
+          $( "#unit" ).html(UNIT);
+
+          $( "#dogePrice" ).html((TOTALDOGE * dogeRandomPrice).toFixed(0));
+        }
+        else if(CURRENCY == "CNY" || CURRENCY == "HKD"){
+          var randomValue = Math.random() * 0.1
+        ////console.log(randomValue)
+        dogeRandomPrice = DOGEPRICE + randomValue
+
+        if(MOONCOST > 0){
+            dogeRandomPrice = (DOGEPRICE * MOONCOST) / DOGEPRICEFORUSD
+        }
+        $( "#dogeCount" ).html(TOTALDOGE);
+        $( "#unit" ).html(UNIT);
+
+        $( "#dogePrice" ).html((TOTALDOGE * dogeRandomPrice).toFixed(2));
+      }else{
+        var randomValue = Math.random() * 0.001
+
+        dogeRandomPrice = DOGEPRICE + randomValue
+
+        if(MOONCOST > 0){
+            dogeRandomPrice = (DOGEPRICE * MOONCOST) / DOGEPRICEFORUSD
+        }
+
+        $( "#dogeCount" ).html(TOTALDOGE);
+        $( "#unit" ).html(UNIT);
+
+        $( "#dogePrice" ).html((TOTALDOGE * dogeRandomPrice).toFixed(4));
+      }
+    }, 300);
+    }
+
+    function getParameterByName(name, url = window.location.href) {
+      name = name.replace(/[\[\]]/g, '\\$&');
+      var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+      results = regex.exec(url);
+      if (!results) return null;
+      if (!results[2]) return '';
+      return decodeURIComponent(results[2].replace(/\+/g, ' '));
+    }
+
+    var MOONCOST = 0;
+
+    function toTheMoon(){
+
+      $("#moonPic").fadeIn();
+
+      MOONCOST = DOGEPRICEFORUSD + (MOONCOST  * 0.1);
+
+      if (MOONCOST >1){
+        MOONCOST = 1
+      }
+
+      setTimeout(function(){
+        $("#moonPic").fadeOut()
+        MOONCOST = 0;
+        getDogePrice();
+        updateDogePrice();
+      },5000);
+    }
+
+
+ons.disableAutoStyling()
+ons.platform.select('ios')
+
+var CURRENTPAGE = 0
+
+//page init
+document.addEventListener('init', function(event) {
+ ////console.log('This is a lifecycle event!', event.target.id);
+
+if (ons.platform.isIPhoneX()) { // Utility function
+  // Add empty attribute to the <html> element
+//  alert("iPhoneX")
+  $(".tabbar").height("70px")
+}
+
+var page = event.target.id
+
+MENU = getParameterByName("MENU")
+
+if(!MENU){
+  MENU = "Home"
+}
+
+if(MENU == "Home" && page == "home"){
+  drawChart()
+  document.querySelector('ons-tabbar').setActiveTab(0)
+}
+
+if(MENU == "Wallet" && page == "wallet"){
+  document.querySelector('ons-tabbar').setActiveTab(1)
+}
+if(MENU == "Mining" && page == "mine"){
+  document.querySelector('ons-tabbar').setActiveTab(2)
+}
+if(MENU == "Trade" && page == "trade"){
+  document.querySelector('ons-tabbar').setActiveTab(3)
+}
+if(MENU == "Metabus" && page == "metabus"){
+  document.querySelector('ons-tabbar').setActiveTab(4)
+}
+
+});
+//page change
+document.addEventListener('postchange', function(event) {
+ var selectedIndex = document.querySelector('ons-tabbar').getActiveTabIndex()
+ 
+////console.log(selectedIndex)
+// //console.log(history.state)
+CURRENTPAGE = selectedIndex
+
+if (selectedIndex == 0) {
+  //alert("HOME")
+  drawChart()
+} 
+if (selectedIndex == 1) {
+  loadBalance();
+  drawWallet()
+} 
+if (selectedIndex == 2) {
+  loadBalance();
+  drawMine()
+} 
+if (selectedIndex == 3) {
+  loadBalance();
+  drawTrade()
+} 
+
+if (selectedIndex == 4) {
+  loadBalance();
+  drawMetabus()
+} 
+});
+
+function copyToClipboard(val) {
+  const t = document.createElement("textarea");
+  document.body.appendChild(t);
+  t.value = val;
+  t.select();
+  document.execCommand('copy');
+  document.body.removeChild(t);
+}
+function copyAddress() {
+  var address = $("#address").val()
+  copyToClipboard(address);
+  showToast("Address is copied.")
+}
+
+function drawWallet(){
+
+WALLET = getParameterByName("WALLET")
+
+if(WALLET){
+
+  getWallet();
+
+  //alert(WALLET)
+  $("#address").val(WALLET)
+  //var addressQRURL = "https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=" + WALLET
+
+
+  var options = {ecclevel: "M"};
+  var addressQRURL = QRCode.generatePNG(WALLET, options);
+
+  $("#addressQR").attr("src",addressQRURL)
+  $("#walletLayout").show() 
+  //$("#walletLayout").css("display","block")
+  $("#dogebellAmount").html(TOTALAMOUNT)
+  $("#bellTransaction").html(TOTALTRANSACTION)
+
+  QR = getParameterByName("data")
+  if(QR) {
+    showSendDogeBell()
+  }
+
+}else{
+  $("#walletLayout").hide()
+  //$("#walletLayout").css("display","none")
+  showWalletAlert()
+}
+
+}
+
+function drawMine(){
+
+  WALLET = getParameterByName("WALLET")
+
+  if(!WALLET){
+    $("#mineLayout").hide()
+    //$("#walletLayout").css("display","none")
+    showWalletAlert()
+    return
+  }
+
+  $("#mineLayout").show()
+  $("#miningBell").html(TOTALAMOUNT + " BELL")
+}
+
+function addBell(){
+
+//setInterval(function() {
+
+if(CURRENTPAGE!=2){
+  ////console.log("NOT MINE.")
+  return
+}
+
+$("#bell").addClass("bell-on")
+$("#bell").removeClass("bell-off")
+$("#bellEffect").hide()
+  
+setTimeout(function() {
+  $("#bell").addClass("bell-off")
+  $("#bell").removeClass("bell-on")
+  $("#miningBell").html(TOTALAMOUNT + 1 + " BELL")
+  $("#bellEffect").show()
+  
+  mineBell()
+
+  },500);
+
+//},5000);
+}
+
+function drawChain(){
+  $("#chainLayout").show() 
+}
+
+function createWallet(){
+
+    m = new Mnemonic(32);
+    var mnemonic =  m.toWords();
+    MNEMONIC = mnemonic
+    var insertData = {"Mnemonic" : mnemonic}
+    insertWallet(insertData)
+
+}
+
+function sendDogeBell(){
+
+  //console.log(TOTALAMOUNT)
+
+  var address = $("#sendWalletInput").val()
+  var amount = $("#sendInput").val().trim()
+
+  if(address == "" || amount == "" ){
+    showToast("Please fill in all fields")
+    return
+  }
+
+  if(isNaN(amount)){
+    showToast("Amount must be a number.")
+    return
+  }
+
+  if(amount <= 0){
+    showToast("Amount must be a positive number.")
+    return
+  }
+
+
+  if(amount > TOTALAMOUNT){
+    showToast("You hane no DogeBell to send.")
+    return
+  }
+
+  showModal()
+
+  var db = firebase.firestore();
+
+  db.collection('wallet').doc(address).get()
+  .then((doc) => {
+
+      if (doc.exists) {
+      ////console.log("Document data:", doc.data());
+        
+        var previosBell = 0;
+
+        var bell = doc.data().bell
+        if(bell){
+          previosBell = parseInt(bell)
+        }
+
+        // Add a new document in collection "cities"
+        db.collection("wallet").doc(address).set({
+            bell: parseInt(previosBell) + parseInt(amount)
+        }, { merge: true })
+        .then(() => {
+
+            var minuseAmount = parseInt(TOTALAMOUNT) - amount
+
+            db.collection("wallet").doc(WALLET).set({
+                bell: minuseAmount
+            }, { merge: true })
+            .then(() => {
+                hideModal()
+                //console.log("Document successfully written!");
+
+                var transaction = {}
+                transaction.wallet = WALLET
+                transaction.amount = minuseAmount
+                transaction.money = TOTALMONEY
+                setCookie("transaction",JSON.stringify(transaction))
+
+
+                showToast("Sending is success.")
+                document.getElementById('sendDialog').hide()
+
+
+                drawWallet() //For refresh.
+
+            })
+            .catch((error) => {
+                hideModal()
+                //console.error("Error writing document: ", error);
+                showToast("Sending is fail.")
+                document.getElementById('sendDialog').hide()
+            });
+        })
+        .catch((error) => {
+            hideModal()
+            //console.error("Error writing document: ", error);
+            showToast("Sending is fail.")
+            document.getElementById('sendDialog').hide()
+        });
+
+      }else{
+        hideModal()
+        showToast("address is wrong.")
+       document.getElementById('sendDialog').hide()
+        return
+      }
+  });
+
+
+}
+
+var isBuying = false
+
+function buy(){
+
+  if(0 >= TOTALMONEY){
+    showToast("You hane no money to buy.")
+    return
+  }
+
+  isBuying = true
+
+  var transaction = {}
+  transaction.wallet = WALLET
+  transaction.amount =  TOTALAMOUNT + parseInt((TOTALMONEY / BELLPRICEFORUSD).toFixed(0))
+  transaction.money = 0
+  setCookie("transaction",JSON.stringify(transaction))
+
+  showToast("(BUY PRICE : $"+ BELLPRICEFORUSD +")")
+  isBuying = false
+}
+
+var isSelling = false
+
+function sell(){
+
+  if(0 >= (TOTALAMOUNT)){
+    showToast("You hane no DogeBell to sell.")
+    return
+  }
+
+  isSelling = true
+
+  var transaction = {}
+  transaction.wallet = WALLET
+  transaction.amount = 0
+  transaction.money = TOTALMONEY + parseFloat((BELLPRICEFORUSD * TOTALAMOUNT).toFixed(4))
+  setCookie("transaction",JSON.stringify(transaction))
+
+
+  showToast("(SELL PRICE : $"+ BELLPRICEFORUSD +")")
+  isSelling = false
+
+}
+
+// isInteger는 es6 임. ie 11 에서는 안되므로 함수 만듬.
+Number.isInteger = Number.isInteger || function(value) {
+    return typeof value === "number" && 
+        isFinite(value) && 
+        Math.floor(value) === value;
+};
+
+var TOTALAMOUNT = 0;
+var TOTALTRANSACTION = 0;
+var TOTALSUPPLY = 0;
+
+var isUpdate = false
+// Loads chat messages history and listens for upcoming ones.
+function loadBalance() {
+
+    if(isBuying || isSelling){
+      return
+    }
+
+    WALLET = getParameterByName("WALLET")
+
+    if(!WALLET) {
+      $("#dogebellAmount").html("0")
+      $("#bellTransaction").html("0")
+      return;
+    }
+
+    isUpdate = true
+
+  var transactionString = getCookie("transaction")
+
+  //console.log(transactionString)
+
+  if(!transactionString){
+    return
+  }
+
+
+  var transaction = JSON.parse(transactionString)
+  //transaction.wallet = WALLET
+
+    if(WALLET == transaction.wallet) {
+      TOTALAMOUNT = transaction.amount 
+      TOTALMONEY = transaction.money 
+    }
+
+    
+    isUpdate = false
+    //alerr TOTALAMOUNT)
+    if (!TOTALAMOUNT || TOTALAMOUNT < 0){
+      TOTALAMOUNT = 0
+    }
+
+    if (!TOTALMONEY || TOTALMONEY < 0){
+      TOTALMONEY = 0
+    }
+
+    //refreshScreen();
+    return; //For Loop.
+}
+
+setInterval(function() {
+  loadBalance()
+}, 100) ;
+
+function mineBell(){
+
+  // //console.log("WHY")
+
+  if(!WALLET) {
+    showToast("Create a wallet to mine.")
+    return
+  }
+
+
+  var transaction = {}
+  transaction.wallet = WALLET
+  transaction.amount = parseInt(TOTALAMOUNT) + 1
+  transaction.money = TOTALMONEY
+  setCookie("transaction",JSON.stringify(transaction))
+
+}
+
+
+function refreshScreen(){
+  if (CURRENTPAGE == 0) {
+    //alert("HOME")
+    //drawChart()
+  } 
+  if (CURRENTPAGE == 1) {
+    drawWallet()
+  } 
+  if (CURRENTPAGE == 2) {
+    drawMine()
+  } 
+  if (CURRENTPAGE == 3) {
+    //drawTrade()
+  } 
+}
+
+function goTelegram(){
+  location.href = "https://t.me/dogebellcom"
+}
+
+
+function goQR(){
+  var encodedUrl = encodeURIComponent(window.location.href);
+  var QRURL = "https://qrturn.com/scan?returnUrl=" + encodedUrl
+  location.href = QRURL
+}
+
+function goHome(){
+  MENU = "Home"
+  movePageWithParam()
+}
+function goWallet(){
+  MENU = "Wallet"
+  movePageWithParam()
+  
+}
+function goMining(){
+  MENU = "Mining"
+  movePageWithParam()
+  
+}
+function goBlockChain(){
+  MENU = "BlockChain"
+  movePageWithParam() 
+}
+
+function goTrade(){
+  MENU = "Trade"
+  movePageWithParam()
+} 
+
+function goMetabus(){
+  MENU = "Metabus"
+  movePageWithParam()
+} 
+
+  </script>
+
+  <link rel="stylesheet" href="/assets/css/dojichart.css"/>
+  <style>
+
+    .box {
+      width: 360px;
+      border: 6px solid #ddd;
+      border-radius: 6px;
+    }
+
+    .moonButton {
+      background-color: #f8f9fa;
+      border: 1px solid #f8f9fa;
+      border-radius: 4px;
+      color: #3c4043;
+      font-family: 'Apple SD Gothic Neo',arial,sans-serif;
+      font-size: 14px;
+      margin: 11px 4px;
+      padding: 0 16px;
+      line-height: 27px;
+      height: 36px;
+      min-width: 54px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff;
+      background-image: url("");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: 50% 50%;
+      z-index: -1000
+    }
+
+    body {margin:0;padding:0;}
+    /* where margin-left = {img width}/2, and margin-top= {img height}/2 */
+    .bigdiv {
+     width:100%;
+     height:auto;
+     position:absolute;
+     z-index: 99999;
+     //max-width: 500px;
+   }
+   .bigdiv img {
+    //position:absolute;
+    width: 100%;
+    height: auto;
+    max-width: 500px;
+    z-index: 99999;
+  }
+
+</style>
+
+
+<style>
+
+
+
+body {
+  background-color: #696969;
+}  
+.page {
+max-width: 768px;
+margin:0 auto;
+}
+
+.dialog{
+    width: auto;
+    max-width: 90%;
+}
+
+.dialog {//min-height:350px;}
+#iput-dialog {min-height:200px;}
+#inform-dialog {min-height:100px;}
+
+.action-sheet {
+  max-width: 500px;
+  /  left: 15%;
+  //  right: 15%;
+}
+
+ons-input, ons-radio, ons-checkbox, ons-search-input {
+    display: block;
+}
+
+.page__background {
+  background-color: #FFFFFF;
+
+}
+
+.speed-dial.fab--bottom__right, button.fab--bottom__right, ons-fab.fab--bottom__right {
+  bottom: 40px;
+}
+
+</style>
+<style>
+.footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: #A9A9A9;
+  text-align: center;
+}
+
+.footer_div {
+  max-width: 500px;
+  background-color: #ffffff;
+  padding-top: :10px;
+  padding-bottom: 10px;
+}
+
+
+</style>
+
+<script type="text/javascript" src="/assets/js/dojichart.js"></script>
+
+</head>
+<body>
+
+<ons-toast id="myToast" animation="fall">
+  <span id="myToastString"></span>
+</ons-toast>
+
+<ons-page>  
+
+  <ons-tabbar position="auto" animation="none">
+    <ons-tab onClick="goHome()" label="Home" icon="fa-home" page="home.html">
+    </ons-tab>
+    <ons-tab onClick="goWallet()" label="Wallet" icon="fa-wallet" page="wallet.html">
+    </ons-tab>
+    <ons-tab onClick="goMining()" label="Mining" icon="fa-mountain" page="mine.html">
+    </ons-tab>
+    <ons-tab onClick="goTrade()" label="Trade" icon="fa-balance-scale" page="trade.html" >
+    </ons-tab>
+    <ons-tab onClick="goMetabus()" label="Metabus" icon="fa-globe" page="metabus.html" >
+    </ons-tab>
+<!--     <ons-tab onClick="goBlockChain()" label="BlockChain" icon="fa-dice-d20" page="chain.html">
+    </ons-tab>
+ -->    
+  </ons-tabbar>
+</ons-page>
+
+<template id="home.html">
+  <ons-page id="home">
+
+  <div id="homeLayout" style="display: none">
+
+  <div id="moonPic" class="bigdiv" style="display: none">
+    <center>
+      <br><br><br><br>
+
+      <img src="/assets/img/tothemoon.png" />
+    </center>
+  </div>
+
+  <center>
+
+
+    <div style="line-height:100%;">
+     <br>
+     <a href="/" >
+       <img src="/assets/img/dogebell-title.png" width="70%" height="50%" style="max-width: 500px;">
+     </a>
+
+     <h3><a href="#" onClick="changeDoge(); return false;"> <span id="dogeCount">1</span> Dogecoin </a> = <a href="#" onClick="changeFiat(); return false;"><span id="unit">$</span> <span id="dogePrice"></span></a> </h3> 
+     <br>
+
+     <div class="custom-select">
+       Currency : <select id="selectList">
+       </select>
+       &nbsp;&nbsp; Margin :
+       <select id="fiatSelect">
+       </select>
+     </div>
+
+     <br>
+
+   </div>
+
+   <div class="box">
+    <div class="dojichart" id="my-dojichart">
+      <div class="region" data-name="price"></div>
+    </div>
+  </div>
+
+  <br>
+  <input onClick="toTheMoon()" value="To The Moon!" aria-label="To The Moon!" name="btnK" type="button">
+
+
+  </center>
+
+  <ons-speed-dial position="bottom right" direction="up">
+    <ons-fab>
+      <ons-icon onClick="goTelegram()" icon="fa-telegram-plane"></ons-icon>
+    </ons-fab>
+<!--     <ons-speed-dial-item>
+      <ons-icon icon="md-twitter"></ons-icon>
+    </ons-speed-dial-item>
+    <ons-speed-dial-item>
+      <ons-icon icon="md-facebook"></ons-icon>
+    </ons-speed-dial-item>
+    <ons-speed-dial-item>
+      <ons-icon icon="md-google-plus"></ons-icon>
+    </ons-speed-dial-item> -->
+  </ons-speed-dial>
+
+
+
+<footer class="site-footer" style="margin: 20px;">
+
+  <center>
+    <span class="site-footer-credits">© 2021 <a href="https://dogebell.com">DogeBell.com</a> ALL RIGHTS RESERVED.</span>
+
+    <div>
+      <span style="">Donation : </span>
+      <a href="https://dogechain.info/address/DN7WNoyLx6DRoQpuzpcLhV95vLARFdbZ9A" target='_blank' >
+        <img style="vertical-align:middle" src="/assets/img/dogeaccept.png" width="80px" height="auto">
+      </a>
+      <a href="https://www.paypal.me/dogebell" target='_blank'>
+        <img style="vertical-align:middle" src="/assets/img/paypal.png" width="70px" height="auto">
+      </a>
+
+    </div>
+
+  </center>
+
+</footer>
+
+
+  </div>
+
+  </ons-page>
+</template>
+
+<template id="wallet.html">
+  <ons-page id="wallet">
+
+<div style="margin-top: 44px; display: none" id="walletLayout">
+
+  <ons-toolbar>
+    <div class="center">Wallet</div>
+  </ons-toolbar>
+
+  <ons-card style="margin: 20px;" id="walletCard">
+    <center>
+    <img id="addressQR" src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=NULL" alt="Onsen UI" style="width: 50%">
+<br>
+
+    <ons-input modifier="underbar" placeholder="Wallet Address" id="address">
+      <input id="inputAddress" type="text" class="text-input text-input--underbar" placeholder="Wallet Address"  style="text-align: center;">
+      <span class="text-input__label text-input--underbar__label text-input--material__label--active">Wallet Address</span>
+    </ons-input>
+
+<br>
+      <div>
+        <ons-button id="sendButton" style="display: none" onClick="showSendDogeBell()"><ons-icon icon="fa-paper-plane"></ons-icon>Send</ons-button>
+        <!-- <ons-button onClick="copyAddress()" id="copyButton" data-clipboard-text="AAAA"><ons-icon icon="fa-copy"></ons-icon>Copy</ons-button> -->
+        <ons-button id="importButton" style="display: none"  onClick="importWallet()"><ons-icon icon="file-import"></ons-icon>Import</ons-button>
+        <ons-button id="backupButton" style="display: none"  onClick="showMnemonicBackupDialog()"><ons-icon icon="file-export"></ons-icon>Backup</ons-button>
+      </div>
+<br>      
+    </center>
+    <div class="content">
+      <ons-list>
+        <ons-list-header>Information</ons-list-header>
+        <ons-list-item>Amount &nbsp;:&nbsp; <span id="dogebellAmount"></span>&nbsp;BELL</ons-list-item>
+        <ons-list-item>Transaction &nbsp;:&nbsp; <span id="bellTransaction"></span></ons-list-item>
+      </ons-list>
+    </div>
+  </ons-card>
+</ons-page>
+</template>
+
+<template id="action-sheet.html">
+
+  <center>
+  <ons-action-sheet id="sheet" cancelable title="You do not have a wallet.">
+    <ons-action-sheet-button icon="md-square-o" onClick="app.hideFromTemplate()">Create Wallet.</ons-action-sheet-button>
+    <ons-action-sheet-button icon="md-square-o" onClick="app.hideFromTemplate()">Import Wallet.</ons-action-sheet-button>
+    <ons-action-sheet-button icon="md-close" onClick="app.hideFromTemplate()" modifier="destructive">Cancel</ons-action-sheet-button>
+  </ons-action-sheet>
+  </center>
+</template>
+
+<template id="trade.html">
+  <ons-page id="trade">
+
+  <div id="tradeLayout" style="display: none">
+
+  <div id="effectPic" class="bigdiv" style="display: none">
+    <center>
+      <br><br><br><br>
+
+      <img src="/assets/img/tothemoon.png" />
+    </center>
+  </div>
+
+  <center>
+
+  <ons-toolbar>
+    <div class="center">Trade</div>
+  </ons-toolbar>
+
+<br>
+<br>
+<br>
+
+    <div style="line-height:100%;">
+     <h3> 1 DogeBell </a> =  $<span id="bellPrice"></span></a> </h3> 
+     <br>
+   </div>
+
+   <div class="box">
+    <div class="dojichart" id="tradeChart">
+      <div class="region" data-name="price"></div>
+    </div>
+  </div>
+
+<br>
+
+    <div class="content" style="margin: 10px;">
+      <ons-list>
+        <ons-list-header>Information</ons-list-header>
+        <ons-list-item>My BELL &nbsp;:&nbsp; <span id="dogeBellForTrade"></span>&nbsp;BELL ($<span id="calculateForTrade"></span>)</ons-list-item>
+        <ons-list-item>My Money &nbsp;:&nbsp; $&nbsp; <span id="moneyForTrade"></span>&nbsp;</ons-list-item>
+      </ons-list>
+    </div>
+ 
+ <br>
+
+  <center>
+
+      <div>
+      <ons-button onClick="buy()" style="background-color: red; color: white; width: 170px;"><ons-icon icon="fa-bell"></ons-icon>&nbsp;&nbsp;Buy BELL&nbsp;&nbsp;</ons-button>
+      <ons-button onClick="sell()" style="background-color: blue; color: white; width: 170px;"><ons-icon icon="fa-bell"></ons-icon>&nbsp;&nbsp;Sell BELL&nbsp;&nbsp;</ons-button>
+      </div>
+
+  </center>
+
+  </div>
+
+  </ons-page>
+</template>
+
+
+<template id="metabus.html">
+<ons-page id="metabus">
+
+  <div id="metaLayout" style="display: none">
+
+  <ons-toolbar>
+    <div class="center">Metabus</div>
+  </ons-toolbar>
+
+  <br>
+  <ons-list modifier="inset">
+    <ons-list-header>My Assets</ons-list-header>
+    <ons-list-item>My Money : $<span id="myMoney"></span></ons-list-item>
+    <ons-list-item>My Valuation : $<span id="myValue"></span></ons-list-item>
+  </ons-list>
+
+  <br>
+
+  <ons-list modifier="inset">
+    <ons-list-header>Casino</ons-list-header>
+    <ons-list-item>
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://i.pinimg.com/originals/76/3b/39/763b39590f0c0674a79b758dd6c9a685.gif">
+      </div>
+      <div class="center">
+        <span class="list-item__title">Roulette ($100)</span><span class="list-item__subtitle">Win rate : 50%</span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="playGame(100,50)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-money-bill-alt"></ons-icon>&nbsp;Bet</ons-button>
+    
+      </div>
+    </ons-list-item>
+    <ons-list-item>
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://media.istockphoto.com/vectors/slot-machine-game-yellow-win-777-jackpot-jackpot-triple-seven-lucky-vector-id1226107947">
+      </div>
+      <div class="center">
+        <span class="list-item__title">Slots ($1,000)</span><span class="list-item__subtitle">Win rate : 20%</span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="playGame(1000,20)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-money-bill-alt"></ons-icon>&nbsp;Bet</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+    <ons-list-item>
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://neconnected.co.uk/wp-content/uploads/2021/03/vcs_should_invest_like_poker_player-bf365a82.jpg">
+      </div>
+      <div class="center">
+        <span class="list-item__title">Poker ($10,000)</span><span class="list-item__subtitle">Win rate : 5%</span>
+      </div>
+      <div class="right">    
+
+      <ons-button onClick="playGame(10000,5)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-money-bill-alt"></ons-icon>&nbsp;Bet</ons-button>
+    
+      </div>
+    </ons-list-item>
+  </ons-list>
+
+  <br>
+
+
+  <ons-list modifier="inset">
+    <ons-list-header>Cryptocurrency</ons-list-header>
+
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://blog.kakaocdn.net/dn/bh16KD/btq4qD1HGAp/NR3SDcHaqkNUgOJCsD9ys1/img.png">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Dogecoin</span> ($1)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Ethereum-icon-purple.svg/440px-Ethereum-icon-purple.svg.png">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Ethereum</span> (100,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://static.coincost.net/logo/cryptocurrency/bitcoin.png">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Bitcoin</span> ($1,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://www.domusweb.it/content/dam/domusweb/en/news/2021/05/13/how-to-mint-your-own-nft-in-5-simple-steps/nft.jpg.foto.rmedium.jpg">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">NFT [Not Funny Token] </span> ($10,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+  </ons-list>
+    
+  <ons-list modifier="inset">
+    <ons-list-header>Car</ons-list-header>
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://image.shutterstock.com/image-illustration/red-hatchback-car-on-white-260nw-1578260833.jpg">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Car</span> ($50,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRf9G7Nik_pHhRSQ_OgjpoHV_IvhuZQFD33vA&usqp=CAU">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Truck</span> ($100,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQea1mUZcvPXpXLYvk2fSs71bq2tnkZmeO66A&usqp=CAU">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Lamborghini</span> ($10,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+  </ons-list>
+  <ons-list modifier="inset">
+    <ons-list-header>Land</ons-list-header>
+    <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://q4g9y5a8.rocketcdn.me/wp-content/uploads/2020/02/home-banner-2020-02-min.jpg">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">House</span> ($1,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+    <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://media-cdn.tripadvisor.com/media/photo-s/16/1a/ea/54/hotel-presidente-4s.jpg">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Hotel</span> ($100,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+    <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://www.neweuropetours.eu/wp-content/uploads/2018/09/mun-castle-21-1600x900.jpg">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Castle</span> ($1,000,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+    <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQnnJZdh3hvmxG5nxHp8k1QaVGIqC-zhbN7Xg&usqp=CAU">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Golf resort</span> ($10,000,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+
+    <ons-list-header>Art</ons-list-header>
+
+     <ons-list-item  class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://www.theartist.me/wp-content/uploads/2019/11/andy-warhol-marilyn-1200x800.jpg">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Warhol's art</span> ($10,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="http://t1.daumcdn.net/brunch/service/user/4hF7/image/vCvbkEp_pZqy9ptZ6UHWVnhXAbc.jpg">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Van Gogh's art</span> ($100,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://www.passion-estampes.com/textile/picasso/tenture-picasso-gueridon.jpg">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Picasso's art</span> ($1,000,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+
+     <ons-list-item class="assetItem">
+      <div class="left">
+        <img class="list-item__thumbnail" src="https://imgc.allpostersimages.com/img/print/u-g-P5USP30.jpg?w=550&h=550&p=0">
+      </div>
+      <div class="center">
+        <span class="list-item__title"><span class="assetName">Da Vinci's art</span> ($10,000,000,000)</span><span class="list-item__subtitle">Amount : <span class="assetAmount">0</span></span>
+      </div>
+      <div class="right">    
+
+
+      <ons-button onClick="buyAsset(this)" style="background-color: red; color: white; margin: : 10px;"><ons-icon icon="fa-plus"></ons-icon>&nbsp;Buy</ons-button>
+      <ons-button onClick="sellAsset(this)" style="background-color: blue; color: white; margin: 10px;"><ons-icon icon="fa-minus"></ons-icon>&nbsp;Sell</ons-button>
+    
+      </div>
+    </ons-list-item>
+  </ons-list>
+
+  <br />
+  </div>
+</ons-page>
+</template>
+
+<template id="chain.html">
+  <ons-page id="chain">
+
+<div style="margin-top: 44px; display: none" id="chainLayout">
+  <ons-toolbar>
+    <div class="center">BlockChain</div>
+  </ons-toolbar>
+
+  <ons-list>
+      <ons-list-item class="input-items">
+        <label class="center">
+        <ons-search-input id="search-input" maxlength="20" placeholder="Search" onchange="ons.notification.alert('Searched for: ' + this.value)" style="width: 100%;"></ons-search-input>
+      </label>
+      </ons-list-item>
+
+    <ons-list-item>Item 0</ons-list-item>
+    <ons-list-item>Item 2</ons-list-item>
+    <ons-list-item>Item 3</ons-list-item>
+    <ons-list-item>Item 4</ons-list-item>
+    <ons-list-item>Item 5</ons-list-item>
+    <ons-list-item>Item 6</ons-list-item>
+  </ons-list>
+
+</div>
+<!--   <ons-list style="width : 100%;height: 100%;">
+    <ons-lazy-repeat id="infinite-list" style="width : 100%;height: 100%;"></ons-lazy-repeat>
+  </ons-list> -->
+</ons-page>
+</template>
+
+<style type="text/css">
+//  body {
+//  background: #1b1b1b;
+//}
+
+h1{
+  font-family: tahoma;
+  //margin-top: 50px;
+  font-size: 48px;
+  color: #9e9e9e;
+  text-align: center;
+  font-weight: 200;
+}
+
+.bell-off{
+
+  display:block;
+  width: 140px;
+  height: 140px;
+  font-size: 140px;
+  margin:50px auto  50px auto ;
+  color: #9e9e9e;
+  //-webkit-animation: ring 5s .7s ease-in-out infinite;
+  -webkit-transform-origin: 50% 4px;
+  //-moz-animation: ring 5s .7s ease-in-out infinite;
+  -moz-transform-origin: 50% 4px;
+  //animation: ring 5s .7s ease-in-out infinite;
+  transform-origin: 50% 4px;
+}
+
+.bell-on{
+  display:block;
+  width: 140px;
+  height: 140px;
+  font-size: 140px;
+  margin:50px auto 50px auto ;
+  color: #9e9e9e;
+  -webkit-animation: ring 2s .0s ease-in-out infinite;
+  -webkit-transform-origin: 50% 4px;
+  -moz-animation: ring 2s .0s ease-in-out infinite;
+  -moz-transform-origin: 50% 4px;
+  animation: ring 2s .0s ease-in-out infinite;
+  transform-origin: 50% 4px;
+}
+
+@-webkit-keyframes ring {
+  0% { -webkit-transform: rotateZ(0); }
+  1% { -webkit-transform: rotateZ(30deg); }
+  3% { -webkit-transform: rotateZ(-28deg); }
+  5% { -webkit-transform: rotateZ(34deg); }
+  7% { -webkit-transform: rotateZ(-32deg); }
+  9% { -webkit-transform: rotateZ(30deg); }
+  11% { -webkit-transform: rotateZ(-28deg); }
+  13% { -webkit-transform: rotateZ(26deg); }
+  15% { -webkit-transform: rotateZ(-24deg); }
+  17% { -webkit-transform: rotateZ(22deg); }
+  19% { -webkit-transform: rotateZ(-20deg); }
+  21% { -webkit-transform: rotateZ(18deg); }
+  23% { -webkit-transform: rotateZ(-16deg); }
+  25% { -webkit-transform: rotateZ(14deg); }
+  27% { -webkit-transform: rotateZ(-12deg); }
+  29% { -webkit-transform: rotateZ(10deg); }
+  31% { -webkit-transform: rotateZ(-8deg); }
+  33% { -webkit-transform: rotateZ(6deg); }
+  35% { -webkit-transform: rotateZ(-4deg); }
+  37% { -webkit-transform: rotateZ(2deg); }
+  39% { -webkit-transform: rotateZ(-1deg); }
+  41% { -webkit-transform: rotateZ(1deg); }
+
+  43% { -webkit-transform: rotateZ(0); }
+  100% { -webkit-transform: rotateZ(0); }
+}
+
+@-moz-keyframes ring {
+  0% { -moz-transform: rotate(0); }
+  1% { -moz-transform: rotate(30deg); }
+  3% { -moz-transform: rotate(-28deg); }
+  5% { -moz-transform: rotate(34deg); }
+  7% { -moz-transform: rotate(-32deg); }
+  9% { -moz-transform: rotate(30deg); }
+  11% { -moz-transform: rotate(-28deg); }
+  13% { -moz-transform: rotate(26deg); }
+  15% { -moz-transform: rotate(-24deg); }
+  17% { -moz-transform: rotate(22deg); }
+  19% { -moz-transform: rotate(-20deg); }
+  21% { -moz-transform: rotate(18deg); }
+  23% { -moz-transform: rotate(-16deg); }
+  25% { -moz-transform: rotate(14deg); }
+  27% { -moz-transform: rotate(-12deg); }
+  29% { -moz-transform: rotate(10deg); }
+  31% { -moz-transform: rotate(-8deg); }
+  33% { -moz-transform: rotate(6deg); }
+  35% { -moz-transform: rotate(-4deg); }
+  37% { -moz-transform: rotate(2deg); }
+  39% { -moz-transform: rotate(-1deg); }
+  41% { -moz-transform: rotate(1deg); }
+
+  43% { -moz-transform: rotate(0); }
+  100% { -moz-transform: rotate(0); }
+}
+
+@keyframes ring {
+  0% { transform: rotate(0); }
+  1% { transform: rotate(30deg); }
+  3% { transform: rotate(-28deg); }
+  5% { transform: rotate(34deg); }
+  7% { transform: rotate(-32deg); }
+  9% { transform: rotate(30deg); }
+  11% { transform: rotate(-28deg); }
+  13% { transform: rotate(26deg); }
+  15% { transform: rotate(-24deg); }
+  17% { transform: rotate(22deg); }
+  19% { transform: rotate(-20deg); }
+  21% { transform: rotate(18deg); }
+  23% { transform: rotate(-16deg); }
+  25% { transform: rotate(14deg); }
+  27% { transform: rotate(-12deg); }
+  29% { transform: rotate(10deg); }
+  31% { transform: rotate(-8deg); }
+  33% { transform: rotate(6deg); }
+  35% { transform: rotate(-4deg); }
+  37% { transform: rotate(2deg); }
+  39% { transform: rotate(-1deg); }
+  41% { transform: rotate(1deg); }
+
+  43% { transform: rotate(0); }
+  100% { transform: rotate(0); }
+}
+</style>
+
+<template id="mine.html">
+  <ons-page id="mine"  onClick="addBell()">
+
+<div style="margin-top: 44px; display: none" id="mineLayout">
+  <ons-toolbar>
+    <div class="center">Mining</div>
+  </ons-toolbar>
+
+<br>
+<br>
+<br>
+
+<div>
+  <h1 id="miningBell" >0 BELL</h1>
+  <span class="bell-off fa fa-bell" id="bell" onclick="addBell()"></span>
+  <h1 id="bellEffect" style="display: none"> + 1</h1>
+</div>
+
+</div>
+
+  </ons-page>
+</template>
+
+<script type="text/javascript" src="/assets/js/dogedata.js"></script>
+<script>
+function drawChart() {
+
+  $("#homeLayout").show()
+/*
+  Hello World
+*/
+var dojichart = new DojiChart.core.Chart(document.getElementById("my-dojichart"), {
+  fieldMap: {
+    time: "t",
+    open: "o",
+    high: "h",
+    low: "l",
+    close: "c",
+  }
+});
+
+// Candlestick layer
+var candle_layer = new DojiChart.layer.CandleLayer({
+  bearBodyColor: "blue",
+  bullBodyColor: "red",
+});
+
+// Price chart panel
+var price_chart_panel = new DojiChart.panel.TimeValuePanel({
+  primaryLayer: candle_layer,
+  height: 250,
+  grid: true,
+  //paddingTop : 100
+});
+
+dojichart.addComponent("price", price_chart_panel);
+
+if(CHARTTIMER){
+    clearInterval(CHARTTIMER);
+}
+
+CHARTTIMER = setInterval(function() {
+
+  if (DOGEPRICEFORUSD == 0){
+    return
+  }
+  
+  //data_arr = shuffle(data_arr);
+
+  //const rand1 = DOGEPRICEFORUSD
+  const rand1 = 0.3690867424697277
+  const rand2 = rand1 + 0.03
+  const rand3 = rand1 - 0.03;
+  var rand4 = rand1 + Math.random() * 0.1;
+
+  if (MOONCOST > 0){
+    MOONCOST = MOONCOST * 1.2;
+    
+    //var maxCost = (DOGEPRICE / DOGEPRICEFORUSD)
+
+    ////console.log(maxCost);
+
+    if(MOONCOST > 1){
+      MOONCOST = 1
+    }
+    rand4 = MOONCOST;
+  }
+
+  ////console.log(rand4 + "!!")
+
+
+  dogeData.pop()
+  dogeData.pop()
+  
+  var data = {"t":"14-5-2021","o":rand1,"h":rand2,"l":rand3,"c":rand4,"v":100}
+  dogeData.push(data)
+  
+  var data = {"t":"14-5-2021","o":1,"h":1,"l":1,"c":1,"v":100}
+  dogeData.push(data)
+  
+  dojichart.loadData(dogeData, "DOGE", "M5");
+}, 300);
+
+/* end of file */
+
+}
+
+var BELLPRICE;
+var BELLPRICEFORUSD;
+var TOTALMONEY;
+
+var TRADETIMER;
+var CHARTTIMER;
+
+var LASTCLOSE = 0.4
+var ATH = false
+var ATL = false
+
+
+let timerId = setTimeout(function tick() {
+
+  if (Math.random() >= 0.5) {
+    ATH = true
+    ATL = false
+  }else{
+    ATH = false
+    ATL = true
+  }
+
+  var nextTime = Math.floor(Math.random() * 3);  // 0~2
+  timerId = setTimeout(tick, nextTime* 1000); // (*)
+}, 30000);
+
+var tradeData = cloneObject(dogeData)
+
+function drawTrade() {
+
+
+  WALLET = getParameterByName("WALLET")
+
+  if(!WALLET){
+    $("#tradeLayout").hide()
+    //$("#walletLayout").css("display","none")
+    showWalletAlert()
+    return
+  }
+
+  $("#tradeLayout").show()
+/*
+  Hello World
+*/
+var dojichart = new DojiChart.core.Chart(document.getElementById("tradeChart"), {
+  fieldMap: {
+    time: "t",
+    open: "o",
+    high: "h",
+    low: "l",
+    close: "c",
+  }
+});
+
+// Candlestick layer
+var candle_layer = new DojiChart.layer.CandleLayer({
+  bearBodyColor: "blue",
+  bullBodyColor: "red",
+});
+
+// Price chart panel
+var price_chart_panel = new DojiChart.panel.TimeValuePanel({
+  primaryLayer: candle_layer,
+  height: 250,
+  grid: true,
+  //paddingTop : 100
+});
+
+dojichart.addComponent("price", price_chart_panel);
+
+if(TRADETIMER){
+  clearInterval(TRADETIMER)
+}
+
+var i = 0;
+
+TRADETIMER = setInterval(function() {
+
+  if (DOGEPRICEFORUSD == 0){
+    return
+  }
+
+  const rand1 = LASTCLOSE 
+  const rand2 = rand1 + 0.01
+  const rand3 = rand1 - 0.01;
+
+  var rand4 = 0
+
+  if (Math.random() >= 0.5 ) {
+    rand4 = LASTCLOSE +  0.05
+  }
+  else{
+    rand4 = LASTCLOSE -  0.05
+  }
+ 
+  ////console.log(ATH)
+
+  if(ATH == true){
+    rand4  +=  0.1
+  }
+
+  ////console.log(ATL)
+
+  if(ATL == true){
+    rand4  -=  0.1
+  }
+
+  // //console.log(ATL)
+
+  if(rand4 <= 0.1){
+    rand4 = 0.1
+    ATH = true
+    ATL = false
+  }
+
+  LASTCLOSE = rand4
+
+  if(isUpdate == false) {
+    $("#bellPrice").html(rand4.toFixed(4))
+    ////console.log(rand4 + "!!")
+    BELLPRICE = rand4.toFixed(4)
+
+    if(!TOTALAMOUNT){
+      TOTALAMOUNT = 0
+    }
+
+    ////console.log(rand4.toFixed(4))
+    BELLPRICEFORUSD = rand4.toFixed(4) 
+
+
+    var totalBell = parseInt(TOTALAMOUNT) 
+    var calculatePrice = BELLPRICEFORUSD * (parseInt(TOTALAMOUNT))
+
+    $("#dogeBellForTrade").html(totalBell)
+    $("#calculateForTrade").html(calculatePrice.toFixed(4))
+
+  }
+
+    if(!TOTALMONEY){
+      TOTALMONEY = 0
+    }
+
+   // console.log(TOTALMONEY)
+
+    $("#moneyForTrade").html(parseFloat(TOTALMONEY).toFixed(4).format())
+
+  // i++
+  // var rest = i % 4
+  // console.log(rest)
+
+  // if(rest == 0) {
+  //   tradeData.pop()
+  //   var data = {"t":"14-5-2021","o":rand1,"h":rand2,"l":rand3,"c":rand4,"v":100}
+  //   tradeData.push(data)
+  // }
+
+  var data = {"t":"14-5-2021","o":rand1,"h":rand2,"l":rand3,"c":rand4,"v":100}
+  tradeData.shift();
+  tradeData.push(data)
+
+
+  dojichart.loadData(tradeData, "DOGE", "M5");
+  
+  // var data = {"t":"14-5-2021","o":1,"h":1,"l":1,"c":1,"v":100}
+  // tradeData.push(data)
+
+}, 200);
+
+/* end of file */
+
+}
+
+
+function drawMetabus() {
+
+  WALLET = getParameterByName("WALLET")
+
+  if(!WALLET){
+    $("#metaLayout").hide()
+    //$("#walletLayout").css("display","none")
+    showWalletAlert()
+    return
+  }
+
+  $("#metaLayout").show()
+  //For reached!
+  // var transaction = {}
+  // transaction.wallet = WALLET
+  // transaction.amount =  9999
+  // transaction.money = 999999
+  // setCookie("transaction",JSON.stringify(transaction))
+
+  //console.log(TOTALMONEY)
+
+
+  if(TOTALMONEY){
+    $("#myMoney").html(TOTALMONEY.toFixed(4).format())
+  }else{
+    $("#myMoney").html(0)
+  }
+  //var n = $( ".assetItem" ).length;
+  var TOTALVALUE = 0
+
+  //setCookie("assetItem2",10)
+  // setCookie("6",10)
+
+  $(".assetItem").each(function(index, item){
+    
+  //  console.log(item)
+
+    var name = $(item).find(".assetName").html()
+
+    //console.log(name)
+
+    if(!WALLET){
+    var amount = 0  
+    }else{
+    var amount = getCookie(WALLET+index)
+    }
+    console.log(WALLET+index)
+
+    //console.log(amount)
+
+    $(item).find(".assetAmount").html(amount)
+   })
+
+  $(".assetItem").each(function(index, item){
+
+//    console.log(item)
+
+    var title = $(item).find(".list-item__title").html()
+    var amount = $(item).find(".assetAmount").html()
+
+    var price = Number(title.replace(/[^0-9.-]+/g,""));
+    var amount = Number(amount.replace(/[^0-9.-]+/g,""));
+
+    if(!isNaN(price) && !isNaN(amount)){
+      // console.log(price)
+      // console.log(amount)
+      TOTALVALUE += price * amount
+    }
+   })
+
+
+  $("#myValue").html(TOTALVALUE.format())
+
+}
+
+function saveState(){
+  var transaction = {}
+  transaction.wallet = WALLET
+  transaction.amount =  TOTALAMOUNT
+  transaction.money = TOTALMONEY
+  setCookie("transaction",JSON.stringify(transaction))
+}
+
+function buyAsset(button) {
+
+  var item = $(button).parent().parent()
+  var name = $(item).find(".assetName").html()
+  var title = $(item).find(".list-item__title").html()
+  var price = Number(title.replace(/[^0-9.-]+/g,""));
+  
+  // console.log(TOTALMONEY)
+  // console.log(price)
+
+  if (price > TOTALMONEY) {
+    showToast("Not enough Money.")
+    return
+  } 
+
+  $(".assetItem").each(function(index, item){
+
+    var nowName = $(item).find(".assetName").html()
+
+    if(nowName == name){
+
+      var previousAmount = parseInt(getCookie(WALLET+index))
+
+      if(!isNaN(previousAmount)){
+        //console.log(previousAmount)
+        setCookie(WALLET+index,previousAmount + 1)   
+      }else{
+        setCookie(WALLET+index,1)   
+      }
+      TOTALMONEY -= price
+      saveState()  
+      drawMetabus()
+      return    
+    }
+   })
+}
+
+function sellAsset(button) {
+
+  var item = $(button).parent().parent()
+  var name = $(item).find(".assetName").html()
+  var title = $(item).find(".list-item__title").html()
+  var price = Number(title.replace(/[^0-9.-]+/g,""));
+  
+  // console.log(TOTALMONEY)
+  // console.log(price)
+
+  $(".assetItem").each(function(index, item){
+
+    var nowName = $(item).find(".assetName").html()
+
+    if(nowName == name){
+
+      var previousAmount = parseInt(getCookie(WALLET+index))
+
+      if(!isNaN(previousAmount) && previousAmount > 0){
+        setCookie(WALLET+index,previousAmount - 1)     
+        TOTALMONEY += price/2
+        saveState()
+        drawMetabus()
+      }else{
+        showToast("You do not have a asset.")   
+      }
+      return    
+    }
+   })
+}
+
+Number.prototype.format = function(){
+    if(this==0) return 0;
+ 
+    var reg = /(^[+-]?\d+)(\d{3})/;
+    var n = (this + '');
+ 
+    while (reg.test(n)) n = n.replace(reg, '$1' + ',' + '$2');
+ 
+    return n;
+};
+ 
+// 문자열 타입에서 쓸 수 있도록 format() 함수 추가
+String.prototype.format = function(){
+    var num = parseFloat(this);
+    if( isNaN(num) ) return "0";
+ 
+    return num.format();
+};
+
+
+function cloneObject(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+var showWalletAlert = function() {
+
+  var isDialog = $(".dialog-mask").is(':visible');
+
+  if(isDialog){
+    ////console.log("DIALOG.")
+    return
+  }
+
+  var dialog = document.getElementById('my-dialog');
+
+  if (dialog) {
+    dialog.show();
+  } else {
+    ons.createElement('dialog.html', { append: true })
+      .then(function(dialog) {
+        dialog.show();
+      });
+  }
+
+  QR = getParameterByName("data")
+  if(QR) {
+    importWallet()
+  }
+
+};
+
+var hideDialog = function(id) {
+  document
+    .getElementById(id)
+    .hide();
+};
+
+
+var showMnemonicDialog = function() {
+  
+  // var isDialog = $(".dialog-mask").is(':visible');
+
+  // if(isDialog){
+  //   ////console.log("DIALOG.")
+  //   return
+  // }
+
+  var dialog = document.getElementById('mnemonicDialog');
+
+  if (dialog) {
+    dialog.show();
+  } else {
+    ons.createElement('mnemonicDialog.html', { append: true })
+      .then(function(dialog) {
+        dialog.show();
+
+          QR = getParameterByName("data")
+          if(QR) {
+            $("#walletInput").val(QR)
+          }
+
+      });
+  }
+};
+
+var showMnemonicBackupDialog = function() {
+  var dialog = document.getElementById('mnemonicBackupDialog');
+
+  if (dialog) {
+    dialog.show();
+  } else {
+    ons.createElement('mnemonicBackupDialog.html', { append: true })
+      .then(function(dialog) {
+        dialog.show();
+
+        MNEMONIC = getParameterByName("MNEMONIC")
+        //alert(MNEMONIC)
+        var words = MNEMONIC.split(",")
+        $("#walletLabel").val(WALLET)
+        $("#word1Label").val(words[0])
+        $("#word2Label").val(words[1])
+        $("#word3Label").val(words[2])
+      });
+  }
+};
+
+var showSendDogeBell = function() {
+
+  var isDialog = $(".dialog-mask").is(':visible');
+
+  if(isDialog){
+    ////console.log("DIALOG.")
+    return
+  }
+
+  var dialog = document.getElementById('sendDialog');
+
+  if (dialog) {
+    dialog.show();
+  } else {
+    ons.createElement('sendDialog.html', { append: true })
+      .then(function(dialog) {
+        dialog.show();
+
+          QR = getParameterByName("data")
+          if(QR) {
+            $("#sendWalletInput").val(QR)
+          }
+      });
+  }
+};
+</script>
+
+<ons-modal direction="up">
+  <div style="text-align: center">
+    <p>
+      <ons-icon icon="md-spinner" size="28px" spin></ons-icon> Loading...
+    </p>
+  </div>
+</ons-modal>
+
+<ons-modal direction="up" id="playModal">
+  <div style="text-align: center">
+    <p>
+      <ons-icon icon="md-spinner" size="28px" spin></ons-icon> Playing ...
+    </p>
+  </div>
+</ons-modal>
+
+<template id="dialog.html">
+  <ons-dialog id="my-dialog">
+    <div style="text-align: center; padding: 10px;">
+      <p>
+        You do not have a wallet.
+      </p>
+
+      <p >
+        <ons-button style="margin: 5px" onClick="createWallet()">Create Wallet.</ons-button> 
+        <ons-button style="margin: 5px" onClick="importWallet()">Import Wallet.</ons-button>
+      </p>
+    </div>
+  </ons-dialog>
+</template>
+
+
+<template id="mnemonicDialog.html">
+  <ons-dialog id="mnemonicDialog" cancelable>
+  <div style="text-align: center; margin : 30px;">
+
+      <p>
+      <label>Import Wallet : </label>
+      </p>
+      <p>
+      <ons-input modifier="underbar" placeholder="Wallet Address" id="walletInput"></ons-input>
+      </p>
+      
+      <p>
+      <ons-button onClick="goQR()"><ons-icon icon="fa-qrcode"></ons-icon>&#x20;Scan</ons-button>
+      </p>
+
+      <p>
+      <label>Mnemonic Words : </label>
+      </p>
+      <p>
+        <ons-input id="word1" modifier="underbar" placeholder="Word1"></ons-input>
+      </p>
+      <p>
+        <ons-input id="word2" modifier="underbar" placeholder="Word2"></ons-input>
+      </p>
+      <p>
+        <ons-input id="word3" modifier="underbar" placeholder="Word3"></ons-input>
+      </p>
+    <p style="margin-top: 30px;">
+      <ons-button onClick="createWalletWithMnemonic()"><ons-icon icon="fa-file-import"></ons-icon>&#x20;Import</ons-button>
+    </p>
+  </div>
+  </ons-dialog>
+</template>
+
+<template id="mnemonicBackupDialog.html">
+  <ons-dialog id="mnemonicBackupDialog" cancelable>
+  <div style="text-align: center; margin : 30px;">
+
+      <p>
+      <label>Backup Wallet : </label>
+      </p>
+      <p>
+      <ons-input modifier="underbar" placeholder="Wallet Address" id="walletLabel" readonly></ons-input>
+      </p>
+      <!-- 
+      <p>
+      <ons-button onClick="goQR()"><ons-icon icon="fa-qrcode"></ons-icon>&#x20;Scan</ons-button>
+      </p>
+ -->
+      <p>
+      <label>Mnemonic Words : </label>
+      </p>
+      <p>
+        <ons-input id="word1Label" modifier="underbar" placeholder="Word1" readonly></ons-input>
+      </p>
+      <p>
+        <ons-input id="word2Label" modifier="underbar" placeholder="Word2" readonly></ons-input>
+      </p>
+      <p>
+        <ons-input id="word3Label" modifier="underbar" placeholder="Word3" readonly></ons-input>
+      </p>
+    <p style="margin-top: 30px;">
+      <ons-button onClick="backupWallet()"><ons-icon icon="fa-file-export"></ons-icon>&#x20;OK</ons-button>
+    </p>
+  </div>
+  </ons-dialog>
+</template>
+
+<template id="sendDialog.html">
+  <ons-dialog id="sendDialog" cancelable>
+  <div style="text-align: center; margin : 30px;">
+
+      <p>
+      <label>Send DogeBell : </label>
+      </p>
+      <p>
+      <ons-input modifier="underbar" placeholder="Wallet Address" id="sendWalletInput"></ons-input>
+      </p>
+      
+      <p>
+      <ons-button onClick="goQR()"><ons-icon icon="fa-qrcode"></ons-icon>&#x20;Scan</ons-button>
+      </p>
+
+      <p>
+      <label>Send Amount : </label>
+      </p>
+      <p>
+        <ons-input modifier="underbar" placeholder="How much Bell?" id="sendInput"></ons-input>
+      </p>
+    <p style="margin-top: 30px;">
+      <ons-button onClick="sendDogeBell()"><ons-icon icon="fa-paper-plane"></ons-icon>&#x20;Send</ons-button>
+    </p>
+  </div>
+  </ons-dialog>
+</template>
+
+
+<script>
+ 
+function setCookie(name, value, days) {
+        if (days) {
+                var date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                var expires = "; expires=" + date.toGMTString();
+        } else {
+                var date = new Date();
+                date.setTime(date.getTime() + (9999 * 24 * 60 * 60 * 1000));
+                var expires = "; expires=" + date.toGMTString();
+                //var expires = "";
+        }
+        
+        document.cookie = name + "=" + value + expires + "; path=/ ; SameSite=None; Secure;";
+}
+
+ 
+function getCookie(cookieName){
+    var cookieValue;
+    if(document.cookie){
+        var array=document.cookie.split((escape(cookieName)+'='));
+        if(array.length >= 2){
+            var arraySub=array[1].split(';');
+            cookieValue=unescape(arraySub[0]);
+        }
+    }
+    return cookieValue;
+}
+ 
+function deleteCookie(cookieName){
+    var temp=getCookie(cookieName);
+    if(temp){
+        setCookie(cookieName,temp,(new Date(1)));
+    }
+}
+ 
+</script>
+
+</body>
+</html>

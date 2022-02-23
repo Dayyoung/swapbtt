@@ -218,7 +218,46 @@ async function caculateBTT() {
     $("#bttTokenValue").val(bttTokenValue)
 }
 
-async function goSwap() {
+async function goSwap2() {
+
+// const privateKey = "...";
+// var createAssetAddress = "TTTAGSHELAijzgswTjT4Lct8hfoHDLPyjV"; 
+// const trc_options = {
+//       name : "test",
+//       abbreviation : "tt",
+//       description : "fortest",
+//       url : "www.baidu.com",
+//       totalSupply : 10000000,
+//       trxRatio : 1,
+//       tokenRatio : 1,
+//       saleStart : 9581929489000,
+//       saleEnd : 9581938187000,
+//       freeBandwidth : 0,
+//       freeBandwidthLimit : 0,
+//       frozenAmount : 0,
+//       frozenDuration : 0,
+//       precision : 6
+// }
+// //Create an unsigned transaction that issue trc10 token，equivalent to createToken
+// const tradeobj = await tronWeb.transactionBuilder.createAsset(
+//       trc_options,
+//       createAssetAddress
+// ).then(output => {
+//   console.log('- Output:', output, '\n');
+//   return output;
+// });
+// //sign 
+// const signedtxn = await tronWeb.trx.sign(
+//       tradeobj,
+//       //privateKey
+// );
+// //broadcast 
+// const receipt = await tronWeb.trx.sendRawTransaction(
+//       signedtxn
+// ).then(output => {
+//   console.log('- Output:', output, '\n');
+//   return output;
+// });
 
     if(!istronWeb) {
       alert("Tronlink is not connected.")
@@ -231,29 +270,66 @@ async function goSwap() {
       alert("Enter the amount of BTT to be exchanged.")
       return
     }
-
-    var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
     
+    var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
+
+    //swap                
+    let exchangeContract = await tronWeb.contract().at("TNuoKL1ni8aoshfFL1ASca1Gou9RXwAzfn")
+    
+    //let exchangeContract = await tronWeb.approve("TVMC5dAM2N32yLBx22HtZNF9rkemYzLdt3", "1000000000000000000" ).at("TNuoKL1ni8aoshfFL1ASca1Gou9RXwAzfn")
+    
+    
+    var value = satoshiValue * (10 ** 18);
+
+    let exchangeResult = await exchangeContract.approve("TVMC5dAM2N32yLBx22HtZNF9rkemYzLdt3", String(value) ).send({
+        feeLimit:100_000_000,
+        //callValue:0,
+        //tokenId:1000527,
+        //tokenValue:satoshiValue,
+        shouldPollResponse:true
+    });       
+
+    // alert("transaction is completed.")
+
+    //1000 00000 00000 00000
+}
+
+
+//Example 1
+async function goSwap(){
+    
+
+    if(!istronWeb) {
+      alert("Tronlink is not connected.")
+      return
+    }
+
+    var tokenValue = parseFloat($("#tokenValue").val());
+
+    if(isNaN(tokenValue) || tokenValue <= 0 ) {
+      alert("Enter the amount of BTT to be exchanged.")
+      return
+    }
+    
+    var value = tokenValue * (10 ** 18);
+
     try {
-        let instance = await tronWeb.contract().at('TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3');
+        let instance = await tronWeb.contract().at('TNuoKL1ni8aoshfFL1ASca1Gou9RXwAzfn');
       
-        instance.Exchange().watch((err, eventResult) => {
+        instance.Approval().watch((err, eventResult) => {
             if (err) {
                 return console.error('Error with "method" event:', err);
             }
             if (eventResult) { 
                 console.log('eventResult:',eventResult);
-                alert("The transaction was successful.")
-                location.reload();
+                exchange();
             }
           });
 
-        let res = await instance.exchange().send({
+        let res = await instance.approve('TVMC5dAM2N32yLBx22HtZNF9rkemYzLdt3',String(value)).send({
             feeLimit:100_000_000,
             callValue:0,
-            shouldPollResponse:true,
-            tokenId:1002000,
-            tokenValue:satoshiValue
+            shouldPollResponse:true
         });
         console.log(res);
 
@@ -261,23 +337,110 @@ async function goSwap() {
         console.log(error);
     }
 
-
-    //swap                
-    // let exchangeContract = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
-    
-    // var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
-
-    // let exchangeResult = await exchangeContract.exchange().send({
-    //     feeLimit:100_000_000,
-    //     callValue:0,
-    //     tokenId:1002000,
-    //     tokenValue:satoshiValue,
-    //     shouldPollResponse:true
-    // });       
-
-    // alert("transaction is completed.")
 }
 
+
+//Example 2
+async function exchange(){
+    
+
+    try {
+        let instance = await tronWeb.contract().at('TVMC5dAM2N32yLBx22HtZNF9rkemYzLdt3');
+      
+        instance.Exchange().watch((err, eventResult) => {
+            if (err) {
+                return console.error('Error with "method" event:', err);
+            }
+            if (eventResult) { 
+                console.log('eventResult:',eventResult);
+            }
+          });
+
+        let res = await instance.exchange().send({
+            feeLimit:100_000_000,
+            callValue:0,
+            shouldPollResponse:true
+        });
+        console.log(res);
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function goSwap3() {
+
+  var CONTRACT = "TNuoKL1ni8aoshfFL1ASca1Gou9RXwAzfn"
+  var ACCOUNT = "TVMC5dAM2N32yLBx22HtZNF9rkemYzLdt3"
+
+    if(!istronWeb) {
+      alert("Tronlink is not connected.")
+      return
+    }
+
+    var tokenValue = parseFloat($("#tokenValue").val());
+
+    if(isNaN(tokenValue) || tokenValue <= 0 ) {
+      alert("Enter the amount of BTT to be exchanged.")
+      return
+    }
+    
+    var value = tokenValue * (10 ** 18);
+
+    let {
+        transaction,
+        result
+    } = await tronWeb.transactionBuilder.triggerSmartContract(
+        CONTRACT, 'approve(address,uint256)', {
+            //feeLimit: 1_000_000,
+            feeLimit: 100_000_000,
+            callValue: 0
+        },
+        [{
+            type: 'address',
+            value: ACCOUNT
+        }, {
+            type: 'uint256',
+            value: String(value)
+        }]
+    );
+    if (!result.result) {
+        console.error("error:", result);
+        return;
+    }
+    console.log("transaction =>", JSON.stringify(transaction, null, 2));
+
+    //const signature = await tronWeb.trx.sign(transaction.raw_data_hex);
+    const signedtxn = await tronWeb.trx.sign(transaction);
+ 
+    //broadcast 
+    const receipt = await tronWeb.trx.sendRawTransaction(
+          signedtxn
+    ).then(output => {
+      console.log('- Output:', output, '\n');
+      return output;
+    });
+
+    //console.log("Signature:", signature);
+    //transaction["signature"] = [signature];
+
+    //const broadcast = await tronWeb.trx.sendRawTransaction(transaction);
+    //console.log("result:", broadcast);
+
+    //const {
+    //    message
+    ///} = broadcast;
+    //if (message) {
+        //console.log("Error:", Buffer.from(message, 'hex').toString());
+    //}
+}
+
+// goSwap().then(() => {
+//         console.log("ok");
+//     })
+//     .catch((err) => {
+//         console.trace(err);
+//     });
 
 </script>
 
@@ -319,7 +482,7 @@ async function goSwap() {
                       <div class="btt-f-title">BTTOLD Swap</div>
                       <div class="shadow-box">
                         <div class="flexB"><span class="swap-num">Amount to Swap</span><span class="available">Available: <span class="available-val" id="BTTOLD">--</span></span></div>
-                        <div class="swap-val mt-10"><span class="ant-input-affix-wrapper"><input placeholder="Enter an amount" type="text" class="ant-input" value="" id="tokenValue"><span class="ant-input-suffix"><span class="uni">BTTOLD</span><span  onclick="goMax()" class="coin-max-r">MAX</span></span></span></div>
+                        <div class="swap-val mt-10"><span class="ant-input-affix-wrapper"><input placeholder="Enter an amount" type="text" class="ant-input" value="1" id="tokenValue"><span class="ant-input-suffix"><span class="uni">BTTOLD</span><span  onclick="goMax()" class="coin-max-r">MAX</span></span></span></div>
                       </div>
                       <div class="arrow"><img src="./btt/arrow-new4.a81a778f.svg" alt=""></div>
                       <div class="shadow-box">
