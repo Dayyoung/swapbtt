@@ -173,6 +173,11 @@ $.get( "https://apilist.tronscan.org/api/account?address=" + swapContract , func
 var istronWeb = false;
 
 window.onload = async function () {
+
+    $('#tokenValue').change(function(){
+      caculateBTT();
+    })
+
     setTimeout(async function () {
       
             tronWeb = window.tronWeb;
@@ -185,10 +190,6 @@ window.onload = async function () {
                 updateInfo(currentaddress);
 
 
-                $('#tokenValue').change(function(){
-                  caculateBTT();
-                })
-
             } catch(err) {
                console.log(err)
 
@@ -200,6 +201,10 @@ window.onload = async function () {
 async function goMax() {
 
   var BTTOLD = parseFloat($("#BTTOLD").html());
+
+  if(isNaN(BTTOLD) || BTTOLD <= 0 ) {
+    return
+  }
 
   $("#tokenValue").val(BTTOLD)
 
@@ -251,6 +256,32 @@ async function goSwap() {
 
 </script>
 
+<style type="text/css">
+  .ant-btn
+  {
+    line-height: 30px !important;
+  }
+
+.ani-button-white
+  {
+
+    border-radius: 18px;
+    background-color : white !important;
+    color : black !important;
+
+
+  }
+
+.ani-button-black
+  {
+    border-radius: 18px;
+    background-color : black !important;
+    color : white !important;
+
+  }
+
+</style>
+
   <body><noscript>You need to enable JavaScript to run this app.</noscript>
 
 
@@ -266,23 +297,23 @@ async function goSwap() {
                     <div class="btt-swap-menu-title"><span class="btt-title-a">Swap</span><br><span class="btt-title-b">BTT</span></div>
                     <div class="btt-swap-menu-wrap">
                       
-                      <!-- <div class="btt-swap-menu-item">
+                     <div class="btt-swap-menu-item">
+                        <a href="/" class="ant-btn ani-button-black"><span>BTTOLD Swap</span></a>
+                      </div> 
+<!--                       <div class="btt-swap-menu-item"><a href="/sbtt" class="ant-btn ani-button-white"><span>BTT Swap</span></a></div>  -->
 
-                        <a href="https://wallet.bt.io/swap?language=EN#!" class="ant-btn ani-button-black"><span>BTTOLD Swap</span></a>
-
-
-                      </div> -->
-<!--                       <div class="btt-swap-menu-item"><a href="https://wallet.bt.io/swap?language=EN#!" class="ant-btn ani-button-white"><span>BTT Swap</span></a></div> -->
                     </div>
                   </section>
                   <div class="btt-swap-mb-menu-title"><span class="btt-title-a">Swap</span><span class="btt-title-b">BTT</span></div>
                   <div class="btt-swap-mb-menu-wrap">
+                    
                     <div class="btt-swap-mb-menu-item">
-                      <div href="#!" class="ani-mb-button-black">BTTOLD<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">BTT</div>
+                      <div OnClick="location.href ='/'" style="cursor:pointer;" class="ani-mb-button-black">BTTOLD<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">BTT</div>
                     </div>
- <!--                    <div class="btt-swap-mb-menu-item">
-                      <div href="#!" class="ani-mb-button-white">BTT<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">BTT</div>
+<!--                     <div class="btt-swap-mb-menu-item">
+                      <div OnClick="location.href ='/sbtt'" style="cursor:pointer;"class="ani-mb-button-white">BTT<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">SBTT</div>
                     </div> -->
+
                   </div>
                   <section class="btt-swap">
                     <div class="bttswap-top">
