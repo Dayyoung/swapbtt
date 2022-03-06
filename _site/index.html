@@ -237,6 +237,50 @@ async function goSwap() {
       return
     }
 
+    var satoshiValue = parseFloat($("#tokenValue").val() * 1000000);
+
+    try {
+        let instance = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3");
+      
+        instance.Exchange().watch((err, eventResult) => {
+            if (err) {
+                return console.error('Error with "method" event:', err);
+            }
+            if (eventResult) { 
+                console.log('eventResult:',eventResult);
+                alert("The transaction was successful.")
+                location.reload();
+            }
+          });
+
+        let res = await instance.exchange().send({
+            feeLimit:100_000_000,
+            callValue:0,
+            tokenId:1002000,
+            tokenValue:satoshiValue,
+            shouldPollResponse:true
+        });
+        console.log(res);
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function goSwapOLD() {
+
+    if(!istronWeb) {
+      alert("Tronlink is not connected.")
+      return
+    }
+
+    var tokenValue = parseFloat($("#tokenValue").val());
+
+    if(isNaN(tokenValue) || tokenValue <= 0 ) {
+      alert("Enter the amount of BTT to be exchanged.")
+      return
+    }
+
     //swap                
     let exchangeContract = await tronWeb.contract().at("TWQUpAgJpjk8Er7DhnME8v3oG2gpagw2z3")
     
@@ -252,7 +296,6 @@ async function goSwap() {
 
     alert("transaction is completed.")
 }
-
 
 </script>
 
@@ -300,7 +343,7 @@ async function goSwap() {
                      <div class="btt-swap-menu-item">
                         <a href="/" class="ant-btn ani-button-black"><span>BTTOLD Swap</span></a>
                       </div> 
-<!--                       <div class="btt-swap-menu-item"><a href="/sbtt" class="ant-btn ani-button-white"><span>BTT Swap</span></a></div>  -->
+<!--                       <div class="btt-swap-menu-item"><a href="/swap" class="ant-btn ani-button-white"><span>BTT Swap</span></a></div>  -->
 
                     </div>
                   </section>
@@ -311,13 +354,13 @@ async function goSwap() {
                       <div OnClick="location.href ='/'" style="cursor:pointer;" class="ani-mb-button-black">BTTOLD<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">BTT</div>
                     </div>
 <!--                     <div class="btt-swap-mb-menu-item">
-                      <div OnClick="location.href ='/sbtt'" style="cursor:pointer;"class="ani-mb-button-white">BTT<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">SBTT</div>
+                      <div OnClick="location.href ='/swap'" style="cursor:pointer;"class="blackb-button-white">BTT<img src="./btt/arrow2.048b610a.svg" alt="" style="width: 11px; margin-left: 2px; margin-right: 2px; vertical-align: 0px;">SBTT</div>
                     </div> -->
 
                   </div>
                   <section class="btt-swap">
                     <div class="bttswap-top">
-                      <div class="btt-f-title">BTTOLD Swap</div>
+                      <div class="btt-f-title">BTTOLD ➟ BTT</div>
                       <div class="shadow-box">
                         <div class="flexB"><span class="swap-num">Amount to Swap</span><span class="available">Available: <span class="available-val" id="BTTOLD">--</span></span></div>
                         <div class="swap-val mt-10"><span class="ant-input-affix-wrapper"><input placeholder="Enter an amount" type="text" class="ant-input" value="" id="tokenValue"><span class="ant-input-suffix"><span class="uni">BTTOLD</span><span  onclick="goMax()" class="coin-max-r">MAX</span></span></span></div>

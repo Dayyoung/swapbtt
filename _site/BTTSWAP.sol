@@ -216,7 +216,8 @@ library SafeTRC20 {
 
 
 contract TokenExchange is Ownable {
-    event Exchange(address indexed whom, uint src_wad, uint target_wad);
+    event SWAP(address indexed whom, uint src_wad, uint target_wad);
+    event BTT(address indexed whom, uint src_wad, uint target_wad);
     event TRC20Claimed(address token, address to, uint balance);
     event TRC10Claimed(trcToken token, address to, uint balance);
 
@@ -225,45 +226,46 @@ contract TokenExchange is Ownable {
     bool public canExchange = true;
 
 
-    trcToken public sourceToken;
-    ITRC20 public targetToken;
+    ITRC20 public sourceToken; //TNuoKL1ni8aoshfFL1ASca1Gou9RXwAzfn BTT
+    ITRC20 public targetToken; //TKqF4eKxx6D7PU4iJ15bLMB4PcBk3nucUs SWAP
     uint256 public  MUL = 1e15;
-    uint256 public  TRXMUL = 1e15;
 
     address payable public blackHole = address(0x0);
 
-    constructor(trcToken _sourceToken, ITRC20 _targetToken) public {
-        sourceToken = _sourceToken; //1000527
-        targetToken = _targetToken; //TKqF4eKxx6D7PU4iJ15bLMB4PcBk3nucUs
-        blackHole = msg.sender;
+    constructor(ITRC20 _sourceToken, ITRC20 _targetToken) public {
+        sourceToken = _sourceToken;
+        targetToken = _targetToken;
+        blackHole = msg.sender; //Add by me. 
     }
 
-    function exchange() payable public {
+    function swap() payable public {
         require(canExchange, "TokenExchange: can not boom right now");
-        require(msg.tokenid == sourceToken, "TokenExchange: error tokenId");
-        blackHole.transferToken(msg.tokenvalue, sourceToken);
-        uint256 sendAmount = msg.tokenvalue.mul(TRXMUL);
-        targetToken.safeTransfer(msg.sender, sendAmount);
-        emit Exchange(msg.sender, msg.tokenvalue, sendAmount);
+        
+        uint256 sourceAmount = sourceToken.allowance(msg.sender, address(this));
+        require(sourceAmount > 0, "sourceToken: not allowance.");
+        sourceToken.transferFrom(msg.sender, blackHole, sourceAmount);
+
+        uint256 targetAmount = targetToken.allowance(blackHole, address(this));
+        require(targetAmount > sourceAmount, "targetToken: not allowance.");
+        targetToken.transferFrom(blackHole, msg.sender, sourceAmount);
+
+        emit SWAP(msg.sender, sourceAmount, targetAmount);
     }
 
-    function() external payable {
-       buy();
+    function btt() payable public {
+        require(canExchange, "TokenExchange: can not boom right now");
+        
+        uint256 targetAmount = targetToken.allowance(msg.sender, address(this));
+        require(targetAmount > 0, "targetToken: not allowance.");
+        targetToken.transferFrom(msg.sender, blackHole, targetAmount);
+
+        uint256 sourceAmount = sourceToken.allowance(blackHole, address(this));
+        require(sourceAmount > targetAmount, "sourceToken: not allowance.");
+        sourceToken.transferFrom(blackHole, msg.sender, targetAmount);
+
+        emit BTT(msg.sender, targetAmount, sourceAmount);
     }
 
-    function buy() payable public {
-        uint256 amountTobuy = msg.value.mul(TRXMUL);
-        uint256 dexBalance = targetToken.balanceOf(address(this));
-        require(amountTobuy > 0, "You need to send some tron");
-        require(amountTobuy <= dexBalance, "Not enough tokens in the reserve");
-        targetToken.transfer(msg.sender, amountTobuy);
-    }
-
-    function withdraw(uint256 amount) onlyOwner public {
-        uint256 minimumAmount = address(this).balance; 
-        require(minimumAmount >= amount);     
-        msg.sender.transfer(amount);          
-    }
 
     function stopExchange() onlyOwner external {
         canExchange = false;

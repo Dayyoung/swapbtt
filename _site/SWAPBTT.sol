@@ -215,7 +215,7 @@ library SafeTRC20 {
 }
 
 
-contract TokenExchange is Ownable {
+contract SWAPBTT is Ownable {
     event SWAP(address indexed whom, uint src_wad, uint target_wad);
     event BTT(address indexed whom, uint src_wad, uint target_wad);
     event TRC20Claimed(address token, address to, uint balance);
@@ -227,7 +227,7 @@ contract TokenExchange is Ownable {
 
 
     ITRC20 public sourceToken; //TNuoKL1ni8aoshfFL1ASca1Gou9RXwAzfn BTT
-    ITRC20 public targetToken; //TKqF4eKxx6D7PU4iJ15bLMB4PcBk3nucUs SWAP
+    ITRC20 public targetToken; //TUsyJEkPadEdR7Qa94BJ8i6BTXkt57rX6A SWAP
     uint256 public  MUL = 1e15;
 
     address payable public blackHole = address(0x0);
@@ -238,29 +238,31 @@ contract TokenExchange is Ownable {
         blackHole = msg.sender; //Add by me. 
     }
 
-    function swap() payable public {
-        require(canExchange, "TokenExchange: can not boom right now");
+    function swap()  public {
+        require(canExchange, "SWAPBTT: can not boom right now");
         
         uint256 sourceAmount = sourceToken.allowance(msg.sender, address(this));
-        require(sourceAmount > 0, "sourceToken: not allowance.");
-        sourceToken.transferFrom(msg.sender, blackHole, sourceAmount);
-
         uint256 targetAmount = targetToken.allowance(blackHole, address(this));
-        require(targetAmount > sourceAmount, "targetToken: not allowance.");
+        
+        require(sourceAmount > 0, "sourceToken: not allowance.");
+        require(targetAmount >= sourceAmount, "targetToken: not allowance.");
+
+        sourceToken.transferFrom(msg.sender, blackHole, sourceAmount);
         targetToken.transferFrom(blackHole, msg.sender, sourceAmount);
 
         emit SWAP(msg.sender, sourceAmount, targetAmount);
     }
 
-    function btt() payable public {
-        require(canExchange, "TokenExchange: can not boom right now");
+    function btt() public {
+        require(canExchange, "SWAPBTT: can not boom right now");
         
         uint256 targetAmount = targetToken.allowance(msg.sender, address(this));
-        require(targetAmount > 0, "targetToken: not allowance.");
-        targetToken.transferFrom(msg.sender, blackHole, targetAmount);
-
         uint256 sourceAmount = sourceToken.allowance(blackHole, address(this));
-        require(sourceAmount > targetAmount, "sourceToken: not allowance.");
+
+        require(targetAmount > 0, "targetToken: not allowance.");
+        require(sourceAmount >= targetAmount, "sourceToken: not allowance.");
+        
+        targetToken.transferFrom(msg.sender, blackHole, targetAmount);
         sourceToken.transferFrom(blackHole, msg.sender, targetAmount);
 
         emit BTT(msg.sender, targetAmount, sourceAmount);
@@ -272,7 +274,7 @@ contract TokenExchange is Ownable {
     }
 
     function claimTokens(ITRC20 _token, address payable _to, uint256 _balance) onlyOwner external {
-        require(_to != address(0), "TokenExchange: can not send to zero address");
+        require(_to != address(0), "SWAPBTT: can not send to zero address");
 
         if (_token == ITRC20(0)) {
             uint256 totalBalance = address(this).balance;
@@ -281,18 +283,18 @@ contract TokenExchange is Ownable {
         } else {
             uint256 totalBalance = _token.balanceOf(address(this));
             uint256 balance = _balance == 0 ? totalBalance : Math.min(totalBalance, _balance);
-            require(balance > 0, "TokenExchange: trying to send 0 balance");
+            require(balance > 0, "SWAPBTT: trying to send 0 balance");
             _token.safeTransfer(_to, balance);
             emit TRC20Claimed(address(_token), _to, balance);
         }
     }
 
     function claimTokens(trcToken _tokenId, address payable _to, uint256 _balance) onlyOwner external {
-        require(_to != address(0), "TokenExchange: can not send to zero address");
+        require(_to != address(0), "SWAPBTT: can not send to zero address");
 
         uint256 totalBalance = address(this).tokenBalance(_tokenId);
         uint256 balance = _balance == 0 ? totalBalance : Math.min(totalBalance, _balance);
-        require(balance > 0, "TokenExchange: trying to send 0 balance");
+        require(balance > 0, "SWAPBTT: trying to send 0 balance");
         _to.transferToken(balance, _tokenId);
         emit TRC10Claimed(_tokenId, _to, balance);
     }
